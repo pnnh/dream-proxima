@@ -39,12 +39,14 @@ async fn postgres() -> Result<Html<String>, String> {
     let result = "hello".to_string();
 
     let dsn_env = env::var("DSN");
-    let dsn = match dsn_env {
-        Ok(file) => file,
-        Err(err) => return Ok(Html(err.to_string())),
-    };
-
-    println!("DSN is {}", dsn);
+    // let dsn = match dsn_env {
+    //     Ok(file) => file,
+    //     Err(err) => return Ok(Html(err.to_string())),
+    // };
+    if dsn_env.is_err() {
+        return Ok(Html(dsn_env.err().unwrap().to_string()));
+    }
+    let dsn = dsn_env.unwrap();
 
     let mut client = match tokio::task::spawn_blocking(move || {
         Client::connect(dsn.as_str(), NoTls)
