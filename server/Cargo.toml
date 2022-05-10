@@ -12,3 +12,4 @@ serde_json = "1.0.79"
 common = { path = "../common" }
 axum = "0.5.1"
 tokio = { version = "1.0", features = ["full"] }
+postgres = { version = "0.19.3"}
