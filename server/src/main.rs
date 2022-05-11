@@ -1,32 +1,30 @@
-extern crate libc;
-
 use std::env;
 use std::net::SocketAddr;
 
-use axum::{
-    async_trait,
-    extract::{Extension, FromRequest, RequestParts},
-    http::StatusCode,
-    routing::get,
-};
 use axum::response::Html;
-use bb8::{Pool, PooledConnection};
+use axum::{extract::Extension, routing::get};
+use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use handlebars::Handlebars;
 use serde_json::json;
 use tokio_postgres::NoTls;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+mod handlers;
+mod layers;
+
 async fn index() -> Result<Html<String>, String> {
     let mut reg = Handlebars::new();
-    let result = reg.render_template("Hello {{name}}", &json!({"name": "World"})).map_err(|err| err.to_string())?;
-    println!(
-        "{}",
-        result
-    );
+    let result = reg
+        .render_template("Hello {{name}}", &json!({"name": "World"}))
+        .map_err(|err| err.to_string())?;
+    println!("{}", result);
 
-    reg.register_template_string("tpl_1", "Good afternoon, {{name}}").map_err(|err| err.to_string())?;
-    let result2 = reg.render("tpl_1", &json!({"name": "World"})).map_err(|err| err.to_string())?;
+    reg.register_template_string("tpl_1", "Good afternoon, {{name}}")
+        .map_err(|err| err.to_string())?;
+    let result2 = reg
+        .render("tpl_1", &json!({"name": "World"}))
+        .map_err(|err| err.to_string())?;
     println!("{}", result2);
 
     let html = result + "\n" + result2.as_str();
@@ -36,8 +34,10 @@ async fn index() -> Result<Html<String>, String> {
 
 async fn html_file() -> Result<Html<String>, String> {
     let mut reg = Handlebars::new();
-    reg.register_template_file("index", "assets/templates/index.html").unwrap();
-    let result = reg.render("index", &json!({"name": "World"}))
+    reg.register_template_file("index", "assets/templates/index.html")
+        .unwrap();
+    let result = reg
+        .render("index", &json!({"name": "World"}))
         .map_err(|err| err.to_string())?;
     println!("{}", result);
 
@@ -53,7 +53,6 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-
     let dsn_env = env::var("DSN");
     if dsn_env.is_err() {
         tracing::error!("dsn_env is error {}", dsn_env.err().unwrap());
@@ -61,17 +60,17 @@ async fn main() {
     }
     let dsn = dsn_env.unwrap();
 
-    let manager =
-        PostgresConnectionManager::new_from_stringlike(dsn, NoTls)
-            .unwrap();
+    let manager = PostgresConnectionManager::new_from_stringlike(dsn, NoTls).unwrap();
     let pool = Pool::builder().build(manager).await.unwrap();
-
 
     let app = axum::Router::new()
         .route("/", axum::routing::get(|| async { "Hello, World!" }))
         .route("/html", get(index))
         .route("/file", get(html_file))
-        .route("/tokio_postgres", get(using_connection_pool_extractor))
+        .route(
+            "/tokio_postgres",
+            get(handlers::using_connection_pool_extractor),
+        )
         .layer(Extension(pool));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 5500));
@@ -81,53 +80,4 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
-}
-
-
-type ConnectionPool = Pool<PostgresConnectionManager<NoTls>>;
-
-async fn using_connection_pool_extractor(
-    Extension(pool): Extension<ConnectionPool>,
-) -> Result<String, (StatusCode, String)> {
-    let conn = pool.get().await.map_err(internal_error)?;
-
-    let query_result = conn.query("SELECT pk, title FROM articles limit 10", &[])
-        .await
-        .map_err(internal_error)?;
-
-    for row in query_result {
-        let pk: &str = row.get(0);
-        let title: &str = row.get(1);
-
-        println!("found article: {} {}", pk, title);
-    }
-
-    Ok("ok".to_string())
-}
-
-struct DatabaseConnection(PooledConnection<'static, PostgresConnectionManager<NoTls>>);
-
-#[async_trait]
-impl<B> FromRequest<B> for DatabaseConnection
-    where
-        B: Send,
-{
-    type Rejection = (StatusCode, String);
-
-    async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
-        let Extension(pool) = Extension::<ConnectionPool>::from_request(req)
-            .await
-            .map_err(internal_error)?;
-
-        let conn = pool.get_owned().await.map_err(internal_error)?;
-
-        Ok(Self(conn))
-    }
-}
-
-fn internal_error<E>(err: E) -> (StatusCode, String)
-    where
-        E: std::error::Error,
-{
-    (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
 }
