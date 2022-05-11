@@ -3,14 +3,13 @@ extern crate libc;
 use std::env;
 use std::net::SocketAddr;
 
-use axum::response::Html;
 use axum::{
     async_trait,
     extract::{Extension, FromRequest, RequestParts},
     http::StatusCode,
     routing::get,
-    Router,
 };
+use axum::response::Html;
 use bb8::{Pool, PooledConnection};
 use bb8_postgres::PostgresConnectionManager;
 use handlebars::Handlebars;
@@ -45,48 +44,6 @@ async fn html_file() -> Result<Html<String>, String> {
     Ok(Html(result))
 }
 
-async fn postgres() -> Result<Html<String>, String> {
-    use postgres::{Client, NoTls};
-    let result = "hello".to_string();
-
-    let dsn_env = env::var("DSN");
-    // let dsn = match dsn_env {
-    //     Ok(file) => file,
-    //     Err(err) => return Ok(Html(err.to_string())),
-    // };
-    if dsn_env.is_err() {
-        return Ok(Html(dsn_env.err().unwrap().to_string()));
-    }
-    let dsn = dsn_env.unwrap();
-
-    let mut client = match tokio::task::spawn_blocking(move || {
-        Client::connect(dsn.as_str(), NoTls)
-    })
-        .await
-        .expect("client") {
-        Ok(x) => x,
-        Err(err) => return Ok(Html(err.to_string())),
-    };
-
-
-    let query_result = match tokio::task::spawn_blocking(move || {
-        client.query("SELECT pk, title FROM articles limit 10", &[])
-    })
-        .await
-        .expect("query_result") {
-        Ok(x) => x,
-        Err(error) => return Ok(Html(error.to_string())),
-    };
-
-    for row in query_result {
-        let pk: &str = row.get(0);
-        let title: &str = row.get(1);
-
-        println!("found article: {} {}", pk, title);
-    }
-    Ok(Html(result))
-}
-
 #[tokio::main]
 async fn main() {
     tracing_subscriber::registry()
@@ -114,8 +71,7 @@ async fn main() {
         .route("/", axum::routing::get(|| async { "Hello, World!" }))
         .route("/html", get(index))
         .route("/file", get(html_file))
-        .route("/postgres", get(postgres))
-        .route("/tokio_postgres", get(using_connection_pool_extractor).post(using_connection_extractor))
+        .route("/tokio_postgres", get(using_connection_pool_extractor))
         .layer(Extension(pool));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 5500));
@@ -130,23 +86,25 @@ async fn main() {
 
 type ConnectionPool = Pool<PostgresConnectionManager<NoTls>>;
 
-// we can exact the connection pool with `Extension`
 async fn using_connection_pool_extractor(
     Extension(pool): Extension<ConnectionPool>,
 ) -> Result<String, (StatusCode, String)> {
     let conn = pool.get().await.map_err(internal_error)?;
 
-    let row = conn
-        .query_one("select 1 + 1", &[])
+    let query_result = conn.query("SELECT pk, title FROM articles limit 10", &[])
         .await
         .map_err(internal_error)?;
-    let two: i32 = row.try_get(0).map_err(internal_error)?;
 
-    Ok(two.to_string())
+    for row in query_result {
+        let pk: &str = row.get(0);
+        let title: &str = row.get(1);
+
+        println!("found article: {} {}", pk, title);
+    }
+
+    Ok("ok".to_string())
 }
 
-// we can also write a custom extractor that grabs a connection from the pool
-// which setup is appropriate depends on your application
 struct DatabaseConnection(PooledConnection<'static, PostgresConnectionManager<NoTls>>);
 
 #[async_trait]
@@ -167,20 +125,6 @@ impl<B> FromRequest<B> for DatabaseConnection
     }
 }
 
-async fn using_connection_extractor(
-    DatabaseConnection(conn): DatabaseConnection,
-) -> Result<String, (StatusCode, String)> {
-    let row = conn
-        .query_one("select 1 + 1", &[])
-        .await
-        .map_err(internal_error)?;
-    let two: i32 = row.try_get(0).map_err(internal_error)?;
-
-    Ok(two.to_string())
-}
-
-/// Utility function for mapping any error into a `500 Internal Server Error`
-/// response.
 fn internal_error<E>(err: E) -> (StatusCode, String)
     where
         E: std::error::Error,
