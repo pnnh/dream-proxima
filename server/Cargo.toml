@@ -13,3 +13,8 @@ common = { path = "../common" }
 axum = "0.5.1"
 tokio = { version = "1.0", features = ["full"] }
 postgres = { version = "0.19.3"}
+tracing-subscriber = { version = "0.3.11", features = ["env-filter"] }
+tokio-postgres = "0.7.6"
+bb8 = "0.8.0"
+bb8-postgres = "0.8.0"
+tracing = "0.1.34"
