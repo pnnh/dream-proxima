@@ -34,6 +34,8 @@ pub async fn using_connection_pool_extractor(
     let mut reg = Handlebars::new();
     reg.register_template_file("index", "assets/templates/index.hbs")
         .unwrap();
+    reg.register_template_file("styles", "assets/templates/styles.hbs")
+        .unwrap();
 
     Ok(Html(
         reg.render("index", &json!({ "models": models }))
