@@ -12,32 +12,14 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod handlers;
 mod layers;
+mod models;
 
 async fn index() -> Result<Html<String>, String> {
     let mut reg = Handlebars::new();
-    let result = reg
-        .render_template("Hello {{name}}", &json!({"name": "World"}))
-        .map_err(|err| err.to_string())?;
-    println!("{}", result);
-
-    reg.register_template_string("tpl_1", "Good afternoon, {{name}}")
-        .map_err(|err| err.to_string())?;
-    let result2 = reg
-        .render("tpl_1", &json!({"name": "World"}))
-        .map_err(|err| err.to_string())?;
-    println!("{}", result2);
-
-    let html = result + "\n" + result2.as_str();
-
-    Ok(Html(html))
-}
-
-async fn html_file() -> Result<Html<String>, String> {
-    let mut reg = Handlebars::new();
-    reg.register_template_file("index", "assets/templates/index.html")
+    reg.register_template_file("index", "assets/templates/index.hbs")
         .unwrap();
     let result = reg
-        .render("index", &json!({"name": "World"}))
+        .render("index", &json!({"name": ["World", "啊啊啊"]}))
         .map_err(|err| err.to_string())?;
     println!("{}", result);
 
@@ -48,7 +30,7 @@ async fn html_file() -> Result<Html<String>, String> {
 async fn main() {
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG").unwrap_or_else(|_| "example_tokio_postgres=debug".into()),
+            std::env::var("RUST_LOG").unwrap_or_else(|_| "debug".into()),
         ))
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -64,9 +46,8 @@ async fn main() {
     let pool = Pool::builder().build(manager).await.unwrap();
 
     let app = axum::Router::new()
-        .route("/", axum::routing::get(|| async { "Hello, World!" }))
-        .route("/html", get(index))
-        .route("/file", get(html_file))
+        .route("/", get(index))
+        .route("/hello", axum::routing::get(|| async { "Hello, World!" }))
         .route(
             "/tokio_postgres",
             get(handlers::using_connection_pool_extractor),

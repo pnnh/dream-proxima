@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <title>泛涵</title>
+</head>
+<body class="home-page">
+<div>
+    <main>
+        <div class="fx-grid">
+            <div class="ms-Grid-col ms-sm12 ms-xl8">
+                <div class="article-list">
+                    {{#each models as |s|}}
+                        <div class="article-item">
+                            <div data-name="{{@index}}" data-type="object">
+                                <div class="article-link">
+                                    <a href="/article/read/{{@index}}">{{pk}}</a>
+                                </div>
+                                <div class="article-description">
+                                    {{title}}
+                                </div>
+                            </div>
+                        </div>
+                    {{/each}}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<div id="root"></div>
+</body>
+</html>
