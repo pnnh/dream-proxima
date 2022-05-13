@@ -17,14 +17,23 @@ use tokio_postgres::NoTls;
 use tower::ServiceBuilder;
 use tower_http::ServiceBuilderExt;
 
-use crate::layers;
-use crate::models;
+use crate::{helpers, layers};
 use crate::models::ArticleView;
 
 #[derive(Clone, Debug)]
 struct State<'reg> {
     registry: Arc<Handlebars<'reg>>,
     pool: Arc<layers::ConnectionPool>,
+}
+
+fn register_template_file<'reg>(reg: &mut Handlebars) {
+    reg.register_template_file("index", "assets/templates/pages/index.hbs").unwrap();
+    reg.register_template_file("styles", "assets/templates/partial/styles.hbs").unwrap();
+    reg.register_template_file("analytics", "assets/templates/partial/analytics.hbs").unwrap();
+    reg.register_template_file("footer", "assets/templates/partial/footer.hbs").unwrap();
+    reg.register_template_file("header", "assets/templates/partial/header.hbs").unwrap();
+    reg.register_template_file("headmeta", "assets/templates/partial/headmeta.hbs").unwrap();
+    reg.register_template_file("scripts", "assets/templates/partial/scripts.hbs").unwrap();
 }
 
 pub async fn app() -> Router {
@@ -34,10 +43,9 @@ pub async fn app() -> Router {
     let pool = Pool::builder().build(manager).await.unwrap();
 
     let mut reg = Handlebars::new();
-    reg.register_template_file("index", "assets/templates/index.hbs")
-        .unwrap();
-    reg.register_template_file("styles", "assets/templates/styles.hbs")
-        .unwrap();
+    reg.register_helper("reslink", Box::new(helpers::SimpleHelper));
+
+    register_template_file(&mut reg);
 
     let state = State {
         registry: Arc::new(reg),
