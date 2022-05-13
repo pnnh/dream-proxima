@@ -2,5 +2,6 @@
 
 members = [
     "common",
-    "server"
+    "server",
+    "examples"
 ]

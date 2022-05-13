@@ -1,5 +1,5 @@
 [package]
-name = "server"
+name = "proxima"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,8 +9,6 @@ reqwest = { version = "0.11.9", features = ["blocking"] }
 handlebars = "4.2.1"
 serde = { version = "1.0.137", features = ["derive"] }
 serde_json = { version = "1.0.81" }
-#serde_derive = "1.0.137"
-common = { path = "../common" }
 axum = "0.5.1"
 tokio = { version = "1.0", features = ["full"] }
 tokio-postgres = "0.7.6"
