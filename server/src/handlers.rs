@@ -74,8 +74,9 @@ async fn get_key<'a>(
 ) -> Result<Html<String>, (StatusCode, String)> {
     let conn = state.pool.get().await.map_err(layers::internal_error)?;
 
-    let offset: i32 = 0;
-    let limit: i32 = 10;
+    let offset: i64 = 0;
+    let limit: i64 = 10;
+
     let query_result = conn
         .query(
             "select articles.pk, articles.title, articles.body, 
@@ -85,7 +86,7 @@ from articles
     left join accounts on articles.creator = accounts.pk
 	left join articles_views on articles.pk = articles_views.pk
 order by update_time desc offset $1 limit $2;",
-            &[&1i32, &10i32],
+            &[&offset, &limit],
         )
         .await
         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?;
@@ -95,20 +96,20 @@ order by update_time desc offset $1 limit $2;",
     for row in query_result {
         let pk: &str = row.get(0);
         let title: &str = row.get(1);
-        let body: &str = row.get(2);
+        let body: serde_json::Value = row.get(2);
         let description: &str = row.get(3);
         let update_time: chrono::NaiveDateTime = row.get(4);
         let creator: String = row.get(5);
         let keywords: String = row.get(6);
         let creator_nickname: &str = row.get(7);
-        let views: i32 = row.get(8);
+        let views: i64 = row.get(8);
 
         let model = IndexArticleView {
             pk: pk.to_string(),
             title: title.to_string(),
-            body: body.to_string(),
+            body,
             description: description.to_string(),
-            update_time,
+            update_time_formatted: update_time.format("%Y年%m月%d日 %H:%M").to_string(),
             creator: creator.to_string(),
             creator_nickname: creator_nickname.to_string(),
             views,

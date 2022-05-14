@@ -4,11 +4,11 @@ use serde::{Deserialize, Serialize};
 pub struct IndexArticleView {
     pub pk: String,
     pub title: String,
-    pub body: String,
+    pub body: serde_json::Value,
     pub creator: String,
     pub keywords: String,
     pub description: String,
-    pub update_time: chrono::NaiveDateTime,
+    pub update_time_formatted: String,
     pub creator_nickname: String,
-    pub views: i32,
+    pub views: i64,
 }
