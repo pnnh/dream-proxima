@@ -1,11 +1,12 @@
 use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+mod config;
 mod handlers;
+mod helpers;
 mod layers;
 mod models;
-mod config;
-mod helpers;
+mod utils;
 
 #[tokio::main]
 async fn main() {

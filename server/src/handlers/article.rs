@@ -1,27 +1,17 @@
-use std::env;
-use std::sync::Arc;
-
-use axum::extract::Query;
 use axum::response::Html;
 use axum::{
     extract::Extension,
     extract::Path,
-    http::{header, HeaderValue, StatusCode},
+    http::{HeaderValue, StatusCode},
     response::IntoResponse,
     routing::get,
     BoxError, Router,
 };
-use bb8::Pool;
-use bb8_postgres::PostgresConnectionManager;
-use handlebars::Handlebars;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tokio_postgres::NoTls;
-use tower::ServiceBuilder;
-use tower_http::ServiceBuilderExt;
 
 use crate::handlers::State;
-use crate::{helpers, layers};
+use crate::{layers, utils};
 use std::collections::HashMap;
 
 pub async fn article_read_handler<'a>(
@@ -39,7 +29,9 @@ pub async fn article_read_handler<'a>(
         .query(
             "select articles.pk, articles.title, articles.body, 
 articles.description, articles.update_time, articles.creator, articles.keywords,
-accounts.nickname, articles_views.views
+accounts.nickname, accounts.email, accounts.description, accounts.photo, 
+    accounts.create_time as accounts_create_time,
+articles_views.views
 from articles
 left join accounts on articles.creator = accounts.pk
 left join articles_views on articles.pk = articles_views.pk
@@ -59,10 +51,15 @@ where articles.pk = $1;",
     let update_time: chrono::NaiveDateTime = query_result[0].get("update_time");
     let creator: String = query_result[0].get("creator");
     let keywords: String = query_result[0].get("keywords");
-    let creator_nickname: &str = query_result[0].get("nickname");
     let views: Option<i64> = query_result[0].get("views");
+    let creator_nickname: &str = query_result[0].get("nickname");
+    let creator_email: &str = query_result[0].get("email");
+    let creator_description: &str = query_result[0].get("description");
+    let creator_photo: &str = query_result[0].get("photo");
+    let creator_create_time: chrono::NaiveDateTime = query_result[0].get("accounts_create_time");
 
-    let body_html = build_body(&body).or_else(|err| {
+    let mut toc_list: Vec<TocItem> = Vec::new();
+    let body_html = build_body(&mut toc_list, &body).or_else(|err| {
         tracing::error!("解析body出错: {}", err);
         Err((
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -76,10 +73,17 @@ where articles.pk = $1;",
         "body_html": body_html,
         "description": description.to_string(),
         "update_time_formatted": update_time.format("%Y年%m月%d日 %H:%M").to_string(),
-        "creator": creator.to_string(),
-        "creator_nickname": creator_nickname.to_string(),
+        "creator": {
+            "pk": creator,
+            "email": creator_email.to_string(),
+            "description": creator_description.to_string(),
+            "nickname": creator_nickname.to_string(),
+            "photo": utils::get_photo_or_default(creator_photo),
+            "create_time": creator_create_time.format("%Y年%m月%d日 %H:%M").to_string(),
+        },
         "views": views.unwrap_or(0),
         "keywords": keywords,
+        "toc_list": toc_list,
     });
     println!("page_data: {:?}", page_data);
 
@@ -91,7 +95,13 @@ where articles.pk = $1;",
     Ok(Html(result))
 }
 
-fn build_body(nodes: &serde_json::Value) -> Result<String, String> {
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct TocItem {
+    pub title: String,
+    pub header: i32,
+}
+
+fn build_body(toc_box: &mut Vec<TocItem>, nodes: &serde_json::Value) -> Result<String, String> {
     let children = nodes["children"]
         .as_array()
         .ok_or_else(|| "children未定义")?;
@@ -99,7 +109,7 @@ fn build_body(nodes: &serde_json::Value) -> Result<String, String> {
     let mut body_html_builder = string_builder::Builder::default();
 
     for child in children {
-        let content = build_node(&child).or_else(|err| Err(err.to_string()))?;
+        let content = build_node(toc_box, &child).or_else(|err| Err(err.to_string()))?;
         body_html_builder.append(content);
     }
     match body_html_builder.string() {
@@ -108,14 +118,38 @@ fn build_body(nodes: &serde_json::Value) -> Result<String, String> {
     }
 }
 
-fn build_node(node: &serde_json::Value) -> Result<String, String> {
+fn build_node(toc_box: &mut Vec<TocItem>, node: &serde_json::Value) -> Result<String, String> {
     let name = node["name"].as_str().ok_or_else(|| "未找到name属性")?;
     match name {
         "paragraph" => Ok(build_paragraph(node)?),
-        "header" => Ok(build_header(node)?),
+        "header" => Ok(build_header(toc_box, node)?),
         "code-block" => Ok("code-block".to_string()),
         _ => Err("undefined".to_string()),
     }
+}
+
+fn build_header(toc_list: &mut Vec<TocItem>, node: &serde_json::Value) -> Result<String, String> {
+    let header = node["header"].as_i64().ok_or_else(|| "未找到header属性")?;
+
+    let children = node["children"]
+        .as_array()
+        .ok_or_else(|| "header children未定义")?;
+    let mut header_text: String = "".to_string();
+
+    for child in children {
+        let content = build_header_text(&child).or_else(|err| Err(err.to_string()))?;
+        header_text.push_str(content.as_str());
+        toc_list.push(TocItem {
+            title: header_text.to_string(),
+            header: header as i32,
+        })
+    }
+    let header_html = format!(
+        "<h{} id='{}'>{}</h{}>",
+        header, header_text, header_text, header
+    );
+
+    Ok(header_html)
 }
 
 fn build_paragraph(node: &serde_json::Value) -> Result<String, String> {
@@ -134,26 +168,6 @@ fn build_paragraph(node: &serde_json::Value) -> Result<String, String> {
         Ok(v) => Ok(v),
         Err(err) => Err(err.to_string()),
     }
-}
-
-fn build_header(node: &serde_json::Value) -> Result<String, String> {
-    let header = node["header"].as_i64().ok_or_else(|| "未找到header属性")?;
-
-    let children = node["children"]
-        .as_array()
-        .ok_or_else(|| "header children未定义")?;
-    let mut header_text: String = "".to_string();
-
-    for child in children {
-        let content = build_header_text(&child).or_else(|err| Err(err.to_string()))?;
-        header_text.push_str(content.as_str());
-    }
-    let header_html = format!(
-        "<h{} id='{}'>{}</h{}>",
-        header, header_text, header_text, header
-    );
-
-    Ok(header_html)
 }
 
 fn build_text(node: &serde_json::Value) -> Result<String, String> {
