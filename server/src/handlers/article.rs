@@ -112,7 +112,7 @@ fn build_node(node: &serde_json::Value) -> Result<String, String> {
     let name = node["name"].as_str().ok_or_else(|| "未找到name属性")?;
     match name {
         "paragraph" => Ok(build_paragraph(node)?),
-        "header" => Ok("header".to_string()),
+        "header" => Ok(build_header(node)?),
         "code-block" => Ok("code-block".to_string()),
         _ => Err("undefined".to_string()),
     }
@@ -134,6 +134,26 @@ fn build_paragraph(node: &serde_json::Value) -> Result<String, String> {
         Ok(v) => Ok(v),
         Err(err) => Err(err.to_string()),
     }
+}
+
+fn build_header(node: &serde_json::Value) -> Result<String, String> {
+    let header = node["header"].as_i64().ok_or_else(|| "未找到header属性")?;
+
+    let children = node["children"]
+        .as_array()
+        .ok_or_else(|| "header children未定义")?;
+    let mut header_text: String = "".to_string();
+
+    for child in children {
+        let content = build_header_text(&child).or_else(|err| Err(err.to_string()))?;
+        header_text.push_str(content.as_str());
+    }
+    let header_html = format!(
+        "<h{} id='{}'>{}</h{}>",
+        header, header_text, header_text, header
+    );
+
+    Ok(header_html)
 }
 
 fn build_text(node: &serde_json::Value) -> Result<String, String> {
@@ -158,4 +178,10 @@ fn build_text(node: &serde_json::Value) -> Result<String, String> {
     }
 
     Ok(format!("<span {}>{}</span>", property, text_html))
+}
+
+fn build_header_text(node: &serde_json::Value) -> Result<String, String> {
+    let text = node["text"].as_str().ok_or_else(|| "未找到text属性")?;
+
+    Ok(html_escape::encode_text(text).to_string())
 }
