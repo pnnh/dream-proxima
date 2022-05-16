@@ -53,12 +53,16 @@ where articles.pk = $1;",
     let keywords: String = query_result[0].get("keywords");
     let views: Option<i64> = query_result[0].get("views");
     let creator_nickname: &str = query_result[0].get("nickname");
-    let creator_email: &str = query_result[0].get("email");
-    let creator_description: &str = query_result[0].get("description");
-    let creator_photo: &str = query_result[0].get("photo");
+    let creator_email: Option<&str> = query_result[0].get("email");
+    let creator_description: Option<&str> = query_result[0].get("description");
+    let creator_photo: Option<&str> = query_result[0].get("photo");
     let creator_create_time: chrono::NaiveDateTime = query_result[0].get("accounts_create_time");
 
     let mut toc_list: Vec<TocItem> = Vec::new();
+    toc_list.push(TocItem {
+        title: title.to_string(),
+        header: 0,
+    });
     let body_html = build_body(&mut toc_list, &body).or_else(|err| {
         tracing::error!("解析body出错: {}", err);
         Err((
@@ -75,10 +79,10 @@ where articles.pk = $1;",
         "update_time_formatted": update_time.format("%Y年%m月%d日 %H:%M").to_string(),
         "creator": {
             "pk": creator,
-            "email": creator_email.to_string(),
-            "description": creator_description.to_string(),
+            "email": creator_email.unwrap_or(""),
+            "description": creator_description.unwrap_or(""),
             "nickname": creator_nickname.to_string(),
-            "photo": utils::get_photo_or_default(creator_photo),
+            "photo": utils::get_photo_or_default(creator_photo.unwrap_or("")),
             "create_time": creator_create_time.format("%Y年%m月%d日 %H:%M").to_string(),
         },
         "views": views.unwrap_or(0),
