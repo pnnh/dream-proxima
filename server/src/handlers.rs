@@ -1,6 +1,8 @@
 mod about;
+mod account;
 mod article;
 mod index;
+mod user;
 
 use serde::Deserialize;
 use std::env;
@@ -52,6 +54,8 @@ fn register_template_file<'reg>(reg: &mut Handlebars) {
 
     reg.register_template_file("article_read", "assets/templates/pages/article/read.hbs")
         .unwrap();
+    reg.register_template_file("user_info", "assets/templates/pages/user/info.hbs")
+        .unwrap();
 }
 
 pub async fn app() -> Router {
@@ -79,5 +83,6 @@ pub async fn app() -> Router {
         .route("/", get(index::index_handler))
         .route("/about", get(about::about_handler))
         .route("/article/read/:pk", get(article::article_read_handler))
+        .route("/user/:pk", get(user::user_info_handler))
         .layer(middleware.into_inner())
 }

@@ -16,11 +16,11 @@
         <div class="page-left">
             <article>
                 <div class="article-title">
-                    <h1>{{title}}</h1>
+                    <h1 id="{{title}}">{{title}}</h1>
                     <div class="description">{{description}}</div>
                     <div class="keywords-list">
                         {{#each keywords_list as |l|}}
-                        <span class="keyword">{{this}}</span>
+                            <span class="keyword">{{this}}</span>
                         {{/each}}
                     </div>
                 </div>
@@ -33,18 +33,18 @@
             <div class="creator-info fx-card">
                 <div class="fx-card-body">
                     {{#with creator}}
-                    <div class="profile">
-                        <div class="profile-left">
-                            <a href="/user/{{pk}}">
-                                <img src="{{photo}}" alt="作者头像" class="creator-photo"/>
-                            </a>
+                        <div class="profile">
+                            <div class="profile-left">
+                                <a href="/user/{{pk}}">
+                                    <img src="{{photo}}" alt="作者头像" class="creator-photo"/>
+                                </a>
+                            </div>
+                            <div class="profile-right">
+                                <a class="nickname fx-link" href="/user/{{pk}}">{{nickname}}</a>
+                                <span class="email">{{email}}</span>
+                            </div>
                         </div>
-                        <div class="profile-right">
-                            <a class="nickname fx-link" href="/user/{{pk}}">{{nickname}}</a>
-                            <span class="email">{{email}}</span>
-                        </div>
-                    </div>
-                    <div class="desc">{{description}}</div>
+                        <div class="desc">{{description}}</div>
                     {{/with}}
                 </div>
             </div>
@@ -52,9 +52,9 @@
                 <div class="fx-card-title">文章目录</div>
                 <div class="fx-card-body">
                     {{#each toc_list as |l|}}
-                    <div class="toc-item" style="padding-left: calc(8px*{{header}});">
-                        <a class="fx-link" href="#{{title}}" title="{{title}}">{{title}}</a>
-                    </div>
+                        <div class="toc-item" style="padding-left: calc(8px*{{header}});">
+                            <a class="fx-link" href="#{{title}}" title="{{title}}">{{title}}</a>
+                        </div>
                     {{/each}}
                 </div>
             </div>
@@ -62,9 +62,6 @@
     </main>
     {{> footer }}
 </div>
-
-<div id="root"></div>
-<script id="data" type="application/json">{{data}}</script>
 {{> scripts }}
 </body>
 </html>
