@@ -1,3 +1,4 @@
+mod about;
 mod article;
 mod index;
 
@@ -33,6 +34,8 @@ pub struct State<'reg> {
 
 fn register_template_file<'reg>(reg: &mut Handlebars) {
     reg.register_template_file("index", "assets/templates/pages/index.hbs")
+        .unwrap();
+    reg.register_template_file("about", "assets/templates/pages/about.hbs")
         .unwrap();
     reg.register_template_file("styles", "assets/templates/partial/styles.hbs")
         .unwrap();
@@ -74,6 +77,7 @@ pub async fn app() -> Router {
     // Build route service
     Router::new()
         .route("/", get(index::index_handler))
+        .route("/about", get(about::about_handler))
         .route("/article/read/:pk", get(article::article_read_handler))
         .layer(middleware.into_inner())
 }
