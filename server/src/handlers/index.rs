@@ -32,7 +32,7 @@ pub struct IndexQuery {
 
 pub async fn index_handler<'a>(
     Query(args): Query<IndexQuery>,
-    Extension(state): Extension<State<'_>>,
+    Extension(state): Extension<Arc<State<'_>>>,
 ) -> Result<Html<String>, (StatusCode, String)> {
     let mut current_page = args.p.unwrap_or(1);
     tracing::debug!("current_page:{}", current_page,);
@@ -110,7 +110,7 @@ order by update_time desc offset $1 limit $2;",
 // todo 将该接口改造为支持通过graphql查询文章列表数据
 pub async fn query_handler<'a>(
     Query(args): Query<IndexQuery>,
-    Extension(state): Extension<State<'_>>,
+    Extension(state): Extension<Arc<State<'_>>>,
 ) -> Result<Html<String>, (StatusCode, String)> {
     let mut current_page = args.p.unwrap_or(1);
     tracing::debug!("current_page:{}", current_page,);

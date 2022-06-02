@@ -8,9 +8,10 @@ use axum::{
     BoxError, Router,
 };
 use serde_json::json;
+use std::sync::Arc;
 
 pub async fn about_handler(
-    Extension(state): Extension<State<'_>>,
+    Extension(state): Extension<Arc<State<'_>>>,
 ) -> Result<Html<String>, (StatusCode, String)> {
     let result = state
         .registry

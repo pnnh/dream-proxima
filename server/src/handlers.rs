@@ -27,8 +27,8 @@ use crate::graphql::schema::{build_schema, AppSchema};
 
 #[derive(Clone, Debug)]
 pub struct State<'reg> {
-    registry: Arc<Handlebars<'reg>>,
-    pool: Arc<layers::ConnectionPool>,
+    pub registry: Handlebars<'reg>,
+    pub pool: layers::ConnectionPool,
 }
 
 async fn graphql_handler(schema: Extension<AppSchema>, req: GraphQLRequest) -> GraphQLResponse {
@@ -74,14 +74,14 @@ pub async fn app() -> Router {
 
     register_template_file(&mut reg);
 
-    let state = State {
-        registry: Arc::new(reg),
-        pool: Arc::new(pool),
-    };
+    let state = Arc::new(State {
+        registry: reg,
+        pool: pool,
+    });
 
-    let middleware = ServiceBuilder::new().add_extension(state);
+    let middleware = ServiceBuilder::new().add_extension(state.clone());
 
-    let schema = build_schema().await;
+    let schema = build_schema(state.clone()).await;
 
     Router::new()
         .route("/", get(index::index_handler))

@@ -13,10 +13,11 @@ use serde_json::json;
 use crate::handlers::State;
 use crate::{layers, utils};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 pub async fn article_read_handler<'a>(
     Path(params): Path<HashMap<String, String>>,
-    Extension(state): Extension<State<'_>>,
+    Extension(state): Extension<Arc<State<'_>>>,
 ) -> Result<Html<String>, (StatusCode, String)> {
     let pk = params
         .get("pk")
