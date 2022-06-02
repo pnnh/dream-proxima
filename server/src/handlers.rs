@@ -27,11 +27,23 @@ use tower_http::ServiceBuilderExt;
 
 use crate::models::IndexArticleView;
 use crate::{handlers, helpers, layers};
+use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
+use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
+
+use crate::graphql::schema::{build_schema, AppSchema};
 
 #[derive(Clone, Debug)]
 pub struct State<'reg> {
     registry: Arc<Handlebars<'reg>>,
     pool: Arc<layers::ConnectionPool>,
+}
+
+async fn graphql_handler(schema: Extension<AppSchema>, req: GraphQLRequest) -> GraphQLResponse {
+    schema.execute(req.into_inner()).await.into()
+}
+
+async fn graphql_playground() -> impl IntoResponse {
+    Html(playground_source(GraphQLPlaygroundConfig::new("/graphql")))
 }
 
 fn register_template_file<'reg>(reg: &mut Handlebars) {
@@ -78,11 +90,15 @@ pub async fn app() -> Router {
         // Share the state with each handler via a request extension
         .add_extension(state);
 
+    let schema = build_schema().await;
+
     // Build route service
     Router::new()
         .route("/", get(index::index_handler))
         .route("/about", get(about::about_handler))
         .route("/article/read/:pk", get(article::article_read_handler))
         .route("/user/:pk", get(user::user_info_handler))
+        .route("/graphql", get(graphql_playground).post(graphql_handler))
+        .layer(Extension(schema))
         .layer(middleware.into_inner())
 }

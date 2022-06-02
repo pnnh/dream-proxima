@@ -2,6 +2,7 @@ use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod config;
+mod graphql;
 mod handlers;
 mod helpers;
 mod layers;
