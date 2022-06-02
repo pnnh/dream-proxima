@@ -21,15 +21,6 @@ impl User {
     }
 }
 
-// impl Into<User> for user::Data {
-//     fn into(self) -> User {
-//         User {
-//             id: self.id,
-//             display_name: self.display_name,
-//         }
-//     }
-// }
-
 #[derive(SimpleObject)]
 #[graphql(complex)]
 pub struct Post {
@@ -50,12 +41,9 @@ impl Post {
     }
 }
 
-// impl Into<Post> for post::Data {
-//     fn into(self) -> Post {
-//         Post {
-//             id: self.id,
-//             content: self.content,
-//             user_id: self.user_id,
-//         }
-//     }
-// }
+#[derive(SimpleObject, Debug)]
+pub struct Article {
+    pub id: String,
+    pub display_name: String,
+    pub title: String,
+}

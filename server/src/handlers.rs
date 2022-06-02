@@ -3,32 +3,25 @@ mod account;
 mod article;
 mod index;
 mod user;
-
-use serde::Deserialize;
-use std::env;
-use std::sync::Arc;
-
-use axum::extract::Query;
-use axum::response::Html;
 use axum::{
-    extract::Extension,
-    http::{header, HeaderValue, StatusCode},
-    response::IntoResponse,
-    routing::get,
+    extract::Extension, http::StatusCode, response::IntoResponse, routing::get, routing::post,
     BoxError, Router,
 };
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use handlebars::Handlebars;
-use serde_json::json;
+
+use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
+use std::env;
+use std::sync::Arc;
 use tokio_postgres::NoTls;
 use tower::ServiceBuilder;
 use tower_http::ServiceBuilderExt;
 
-use crate::models::IndexArticleView;
-use crate::{handlers, helpers, layers};
-use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
+use crate::{config, helpers, layers};
+
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
+use axum::response::Html;
 
 use crate::graphql::schema::{build_schema, AppSchema};
 
@@ -86,19 +79,23 @@ pub async fn app() -> Router {
         pool: Arc::new(pool),
     };
 
-    let middleware = ServiceBuilder::new()
-        // Share the state with each handler via a request extension
-        .add_extension(state);
+    let middleware = ServiceBuilder::new().add_extension(state);
 
     let schema = build_schema().await;
 
-    // Build route service
     Router::new()
         .route("/", get(index::index_handler))
         .route("/about", get(about::about_handler))
         .route("/article/read/:pk", get(article::article_read_handler))
+        .route(
+            "/graphql",
+            if config::is_debug() {
+                get(graphql_playground).post(graphql_handler)
+            } else {
+                post(graphql_handler)
+            },
+        )
         .route("/user/:pk", get(user::user_info_handler))
-        .route("/graphql", get(graphql_playground).post(graphql_handler))
         .layer(Extension(schema))
         .layer(middleware.into_inner())
 }
