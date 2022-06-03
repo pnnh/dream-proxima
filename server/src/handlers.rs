@@ -12,6 +12,7 @@ use bb8_postgres::PostgresConnectionManager;
 use handlebars::Handlebars;
 
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
+use axum::http::Method;
 use std::env;
 use std::sync::Arc;
 use tokio_postgres::NoTls;
@@ -22,6 +23,7 @@ use crate::{config, helpers, layers};
 
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
 use axum::response::Html;
+use tower_http::cors::{any, CorsLayer};
 
 use crate::graphql::schema::{build_schema, AppSchema};
 
@@ -76,8 +78,15 @@ pub async fn app() -> Router {
 
     let state = Arc::new(State {
         registry: reg,
-        pool: pool,
+        pool,
     });
+
+    let cors = CorsLayer::new()
+        // allow `GET` and `POST` when accessing the resource
+        .allow_methods(vec![Method::GET, Method::POST])
+        // allow requests from any origin
+        .allow_origin(any())
+        .allow_headers(any());
 
     let middleware = ServiceBuilder::new().add_extension(state.clone());
 
@@ -96,6 +105,7 @@ pub async fn app() -> Router {
             },
         )
         .route("/user/:pk", get(user::user_info_handler))
+        .layer(cors)
         .layer(Extension(schema))
         .layer(middleware.into_inner())
 }
