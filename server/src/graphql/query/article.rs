@@ -53,11 +53,11 @@ order by update_time desc offset $1 limit $2;",
                 display_name: "".to_string(),
                 title: title.to_string(),
             };
-            println!("found article: {:?}", model);
+            //println!("found article: {:?}", model);
             result.push(model);
         }
 
-        println!("文章列表: {:?}", result);
+        //tracing::debug!("文章列表: {:?}", result);
 
         Ok(result)
     }

@@ -438,14 +438,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "common"
-version = "0.1.0"
-dependencies = [
- "getrandom",
- "rand",
-]
-
-[[package]]
 name = "core-foundation"
 version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -761,10 +753,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9be70c98951c83b8d2f8f60d7065fa6d5146873094452a1008da8c2f1e4205ad"
 dependencies = [
  "cfg-if",
- "js-sys",
  "libc",
  "wasi 0.10.0+wasi-snapshot-preview1",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -1494,27 +1484,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "proxima"
-version = "0.1.0"
-dependencies = [
- "axum",
- "base64",
- "bb8",
- "bb8-postgres",
- "clap",
- "handlebars",
- "reqwest",
- "serde",
- "serde_json",
- "tokio",
- "tokio-postgres",
- "tower",
- "tower-http",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "quick-error"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1739,7 +1708,6 @@ dependencies = [
  "bb8-postgres",
  "chrono",
  "clap",
- "common",
  "handlebars",
  "html-escape",
  "reqwest",

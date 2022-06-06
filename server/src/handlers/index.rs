@@ -92,7 +92,7 @@ order by update_time desc offset $1 limit $2;",
             views: views.unwrap_or(0),
             keywords,
         };
-        println!("found article: {:?}", model);
+        //println!("found article: {:?}", model);
         models.push(model);
     }
     let pages_html = helpers::calc_page_html(max_page, current_page);

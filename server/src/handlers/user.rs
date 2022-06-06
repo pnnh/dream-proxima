@@ -56,7 +56,7 @@ where accounts.pk = $1;",
         "photo": utils::get_photo_or_default(photo),
         "create_time": create_time.format("%Y年%m月%d日 %H:%M").to_string(),
     });
-    println!("page_data: {:?}", page_data);
+    //println!("page_data: {:?}", page_data);
 
     let result = state
         .registry
