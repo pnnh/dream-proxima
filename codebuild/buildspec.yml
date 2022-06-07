@@ -3,12 +3,12 @@ version: 0.2
 phases:
   build:
     commands:
-      - apt-get update
+      - apt-get update -y
       - apt-get install -y tzdata
       - apt-get install -y build-essential
       - apt-get install -y curl
       - curl https://sh.rustup.rs -sSf | bash -s -- -y
-      - source $HOME/.cargo/env
+      - export PATH="${HOME}/.cargo/bin:${PATH}"
       - cargo version
       - make release
 
