@@ -9,7 +9,7 @@ COPY output /home
 RUN apt-get update \
 		&& apt-get install -y ca-certificates \
 		&& apt-get install -y libc6 \
-		&& apt-get clean \
+		&& rm -rf /var/lib/apt/lists/* \
 		&& ls -a /home
 
 # 启动程序
