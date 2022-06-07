@@ -3,15 +3,6 @@ version: 0.2
 phases:
   build:
     commands:
-      - echo Etc/UTC > /etc/timezone
-      - apt-get update -y
-      - apt-get install -y tzdata
-      - apt-get install -y build-essential
-      - apt-get install -y curl
-      - apt-get install -y libssl-dev
-      - apt-get install -y pkg-config
-      - curl https://sh.rustup.rs -sSf | bash -s -- -y
-      - export PATH="${HOME}/.cargo/bin:${PATH}"
       - cargo version
       - make release
 
