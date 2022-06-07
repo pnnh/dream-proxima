@@ -10,7 +10,7 @@ phases:
   build:
     commands:
       - docker version
-      - docker build -t $REPOSITORY_NAME:latest .
+      - docker build -t $REPOSITORY_NAME:latest -f docker/Dockerfile .
       - docker tag $REPOSITORY_NAME:latest $REPOSITORY_URI/$REPOSITORY_NAME:latest
   post_build:
     commands:
