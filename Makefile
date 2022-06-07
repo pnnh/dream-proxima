@@ -2,10 +2,18 @@ all : release
 
 DIR := $(CURDIR)
 
-release :
-	cargo build --release --package server
+setup :
+	-mkdir $(DIR)/output
+	-echo "Version = \"`openssl rand -base64 3 | md5sum | cut -c1-8`\"" > $(DIR)/output/version.txt
 
-debug :
+assets : setup
+	-cd $(DIR) && cp -r assets output
+
+release : assets
+	cargo build --release --package server
+	-cp target/release/server output
+
+debug : assets
 	cargo build --package server
 
 image : release

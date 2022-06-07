@@ -4,7 +4,7 @@ FROM ubuntu:22.04
 WORKDIR /home
 
 # 拷贝启动脚本
-COPY target/release/server /home
+COPY output /home
 
 RUN apt-get update \
 		&& apt-get install -y ca-certificates \

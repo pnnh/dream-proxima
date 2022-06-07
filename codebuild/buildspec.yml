@@ -1,0 +1,20 @@
+version: 0.2
+
+phases:
+  build:
+    commands:
+      - apt-get install -y tzdata
+      - apt-get install -y gnupg2
+      - apt-get install -y ca-certificates
+      - apt-get install -y build-essential
+      - apt-get install -y curl
+      - curl https://sh.rustup.rs -sSf | bash -s -- -y
+      - source $HOME/.cargo/env
+      - cargo version
+      - make release
+
+artifacts:
+  files:
+    - codebuild/**/*
+    - output/**/*
+    - docker/**/*
