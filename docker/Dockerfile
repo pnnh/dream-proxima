@@ -13,4 +13,4 @@ RUN apt-get update \
 		&& ls -a /home
 
 # 启动程序
-ENTRYPOINT ["/home/server"]
+ENTRYPOINT ["/home/output/server"]
