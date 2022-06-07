@@ -4,20 +4,19 @@ phases:
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
-      - REPOSITORY_NAME=dream-proxima
-      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/dream-proxima
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
   build:
     commands:
       - docker version
-      - docker build -t $REPOSITORY_NAME:latest -f docker/Dockerfile .
-      - docker tag $REPOSITORY_NAME:latest $REPOSITORY_URI/$REPOSITORY_NAME:latest
+      - docker build -t $REPOSITORY_URI:latest -f docker/Dockerfile .
+      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:latest
   post_build:
     commands:
       - docker images
-      - docker push $REPOSITORY_URI/$REPOSITORY_NAME:latest
-      - printf '{"ImageURI":"%s"}' $REPOSITORY_URI/$REPOSITORY_NAME:latest > $CODEBUILD_SRC_DIR/imageDetail.json
-      - printf '[{"name":"sfx-fargate-container","imageUri":"%s"}]' $REPOSITORY_URI/$REPOSITORY_NAME:latest > $CODEBUILD_SRC_DIR/imagedefinitions.json
+      - docker push $REPOSITORY_URI:latest
+      - printf '{"ImageURI":"%s"}' $REPOSITORY_URI:latest > $CODEBUILD_SRC_DIR/imageDetail.json
+      - printf '[{"name":"sfx-fargate-container","imageUri":"%s"}]' $REPOSITORY_URI:latest > $CODEBUILD_SRC_DIR/imagedefinitions.json
 artifacts:
   files:
     - imagedefinitions.json
