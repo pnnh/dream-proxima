@@ -6,15 +6,20 @@ use crate::handlers::State;
 use crate::models::IndexArticleView;
 
 #[derive(Default)]
-pub struct ArticleQuery;
+pub struct IndexQuery;
 
 #[Object]
-impl ArticleQuery {
-    async fn articles(&self, ctx: &Context<'_>) -> Result<Vec<Article>> {
+impl IndexQuery {
+    async fn articles(&self, ctx: &Context<'_>, offset: i32, limit: i32) -> Result<Vec<Article>> {
         let state = ctx.data::<Arc<State>>().unwrap();
 
-        let offset: i64 = 0;
-        let limit: i64 = 20;
+        let offset_value: i64 = if offset < 0 { 0 } else { offset as i64 };
+        let limit_value: i64 = if limit < 20 || limit > 100 {
+            20
+        } else {
+            limit as i64
+        };
+
         let conn = state
             .pool
             .get()
@@ -30,7 +35,7 @@ from articles
     left join accounts on articles.creator = accounts.pk
 	left join articles_views on articles.pk = articles_views.pk
 order by update_time desc offset $1 limit $2;",
-                &[&offset, &limit],
+                &[&offset_value, &limit_value],
             )
             .await
             .expect("graphql articles执行查询出错");
@@ -60,5 +65,23 @@ order by update_time desc offset $1 limit $2;",
         //tracing::debug!("文章列表: {:?}", result);
 
         Ok(result)
+    }
+
+    async fn count(&self, ctx: &Context<'_>) -> Result<i32> {
+        let state = ctx.data::<Arc<State>>().unwrap();
+
+        let conn = state.pool.get().await.expect("graphql count获取pool出错");
+
+        let query_result = conn
+            .query("select count(*) from articles;", &[])
+            .await
+            .expect("graphql count执行查询出错");
+
+        for row in query_result {
+            let count: i64 = row.get(0);
+            return Ok(count as i32);
+        }
+
+        Err(async_graphql::Error::new("分页错误"))
     }
 }
