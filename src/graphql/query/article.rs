@@ -14,8 +14,8 @@ impl IndexQuery {
         let state = ctx.data::<Arc<State>>().unwrap();
 
         let offset_value: i64 = if offset < 0 { 0 } else { offset as i64 };
-        let limit_value: i64 = if limit < 20 || limit > 100 {
-            20
+        let limit_value: i64 = if limit < 4 || limit > 64 {
+            8
         } else {
             limit as i64
         };
