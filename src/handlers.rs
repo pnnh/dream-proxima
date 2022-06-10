@@ -21,6 +21,7 @@ use tower_http::ServiceBuilderExt;
 
 use crate::{config, helpers, layers};
 
+use crate::config::ProximaConfig;
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
 use axum::response::Html;
 use tower_http::cors::{any, CorsLayer};
@@ -31,6 +32,7 @@ use crate::graphql::schema::{build_schema, AppSchema};
 pub struct State<'reg> {
     pub registry: Handlebars<'reg>,
     pub pool: layers::ConnectionPool,
+    pub config: ProximaConfig,
 }
 
 async fn graphql_handler(schema: Extension<AppSchema>, req: GraphQLRequest) -> GraphQLResponse {
@@ -66,6 +68,9 @@ fn register_template_file<'reg>(reg: &mut Handlebars) {
 }
 
 pub async fn app() -> Router {
+    let config = ProximaConfig::init().await.expect("初始化配置出错");
+    tracing::debug!("读取到配置:\n{}", config.get_configuration());
+
     let dsn_env = env::var("DSN").expect("dsn_env is error");
 
     let manager = PostgresConnectionManager::new_from_stringlike(dsn_env, NoTls).unwrap();
@@ -79,6 +84,7 @@ pub async fn app() -> Router {
     let state = Arc::new(State {
         registry: reg,
         pool,
+        config,
     });
 
     let cors = CorsLayer::new()
