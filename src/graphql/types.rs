@@ -43,7 +43,5 @@ impl Post {
 
 #[derive(SimpleObject, Debug)]
 pub struct Article {
-    pub id: String,
-    pub display_name: String,
     pub title: String,
 }
