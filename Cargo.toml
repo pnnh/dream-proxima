@@ -24,5 +24,6 @@ string-builder = { version = "0.2.0" }
 html-escape = "0.2.11"
 async-graphql = "4.0.1"
 async-graphql-axum = "4.0.1"
-aws-config = "0.12.0"
-aws-sdk-appconfig = "0.12.0"
+aws-config = "0.13.0"
+aws-sdk-appconfig = "0.13.0"
+aws-sdk-appconfigdata = "0.13.0"

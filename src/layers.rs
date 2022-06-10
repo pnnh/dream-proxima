@@ -1,3 +1,5 @@
+pub(crate) mod appconfig;
+
 use axum::{
     async_trait,
     extract::{Extension, FromRequest, RequestParts},

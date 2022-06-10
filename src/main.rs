@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+use tracing_subscriber::fmt::layer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod config;
@@ -17,6 +18,8 @@ async fn main() {
         ))
         .with(tracing_subscriber::fmt::layer())
         .init();
+
+    layers::appconfig::get_config().await;
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 5500));
     tracing::debug!("listening on {}", addr);
