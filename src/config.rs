@@ -8,9 +8,10 @@ use std::ops::Index;
 pub const FILE_URL: &str = "https://file.sfx.xyz";
 pub const DEFAULT_FILE_URL: &str = "https://res.sfx.xyz/images/default.png";
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 pub struct ProximaConfig {
     configuration: String,
+    pub dsn: String,
 }
 
 impl ProximaConfig {
@@ -43,6 +44,7 @@ impl ProximaConfig {
             //tracing::debug!("获取到配置\n{}", content);
             let mut config = ProximaConfig {
                 configuration: content,
+                dsn: "".to_string(),
             };
             config.parse_config();
             return Ok(config);
@@ -54,7 +56,7 @@ impl ProximaConfig {
         return self.configuration.clone();
     }
 
-    pub fn parse_config(&mut self) -> &ProximaConfig {
+    pub fn parse_config(&mut self) {
         let split = self.configuration.split("\n");
         let mut config_map: HashMap<String, String> = HashMap::new();
 
@@ -63,9 +65,14 @@ impl ProximaConfig {
             let index = s.find("=").unwrap_or(0);
             if index > 0 {
                 config_map.insert(s[..index].to_string(), s[index + 1..].to_string());
+                let key = s[..index].to_string();
+                let value = s[index + 1..].to_string();
+                match key.as_str() {
+                    "DSN" => self.dsn = value,
+                    _ => {}
+                }
             }
         }
-        self
     }
 }
 

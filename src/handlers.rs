@@ -69,9 +69,11 @@ fn register_template_file<'reg>(reg: &mut Handlebars) {
 
 pub async fn app() -> Router {
     let config = ProximaConfig::init().await.expect("初始化配置出错");
-    tracing::debug!("读取到配置:\n{}", config.get_configuration());
 
-    let dsn_env = env::var("DSN").expect("dsn_env is error");
+    //tracing::debug!("读取到配置:\n{}", config.dsn);
+
+    //let dsn_env = env::var("DSN").expect("dsn_env is error");
+    let dsn_env: &str = config.dsn.as_str();
 
     let manager = PostgresConnectionManager::new_from_stringlike(dsn_env, NoTls).unwrap();
     let pool = Pool::builder().build(manager).await.unwrap();
