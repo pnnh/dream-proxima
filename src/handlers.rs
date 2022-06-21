@@ -21,7 +21,7 @@ use tower_http::ServiceBuilderExt;
 
 use crate::{config, helpers, layers};
 
-use crate::config::ProximaConfig;
+use crate::config::{is_debug, ProximaConfig};
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
 use axum::response::Html;
 use tower_http::cors::{any, CorsLayer};
@@ -70,15 +70,15 @@ fn register_template_file<'reg>(reg: &mut Handlebars) {
 pub async fn app() -> Router {
     let config = ProximaConfig::init().await.expect("初始化配置出错");
 
-    //tracing::debug!("读取到配置:\n{}", config.dsn);
-
-    //let dsn_env = env::var("DSN").expect("dsn_env is error");
     let dsn_env: &str = config.dsn.as_str();
 
     let manager = PostgresConnectionManager::new_from_stringlike(dsn_env, NoTls).unwrap();
     let pool = Pool::builder().build(manager).await.unwrap();
 
     let mut reg = Handlebars::new();
+    if is_debug() {
+        reg.set_dev_mode(true);
+    }
     reg.register_helper("reslink", Box::new(helpers::SimpleHelper));
 
     register_template_file(&mut reg);

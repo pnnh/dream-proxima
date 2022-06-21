@@ -61,7 +61,6 @@ impl ProximaConfig {
         let mut config_map: HashMap<String, String> = HashMap::new();
 
         for s in split {
-            println!("{}", s);
             let index = s.find("=").unwrap_or(0);
             if index > 0 {
                 config_map.insert(s[..index].to_string(), s[index + 1..].to_string());
