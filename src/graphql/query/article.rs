@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 use crate::graphql::types::Article;
 use crate::handlers::State;
-use crate::models::IndexArticleView;
 
 #[derive(Default)]
 pub struct IndexQuery;
@@ -43,24 +42,13 @@ order by update_time desc offset $1 limit $2;",
         let mut result: Vec<Article> = Vec::new();
 
         for row in query_result {
-            let pk: &str = row.get(0);
             let title: &str = row.get("title");
-            let body: serde_json::Value = row.get(2);
-            let description: Option<&str> = row.get("description");
-            let update_time: chrono::NaiveDateTime = row.get(4);
-            let creator: Option<String> = row.get(5);
-            let keywords: Option<String> = row.get(6);
-            let creator_nickname: Option<&str> = row.get(7);
-            let views: Option<i64> = row.get(8);
 
             let model = Article {
                 title: title.to_string(),
             };
-            //println!("found article: {:?}", model);
             result.push(model);
         }
-
-        //tracing::debug!("文章列表: {:?}", result);
 
         Ok(result)
     }

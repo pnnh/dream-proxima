@@ -17,7 +17,7 @@ pub struct PostMutation;
 
 #[Object]
 impl PostMutation {
-    pub async fn create_post(&self, ctx: &Context<'_>, input: CreatePostInput) -> Result<Post> {
+    pub async fn create_post(&self, _ctx: &Context<'_>, input: CreatePostInput) -> Result<Post> {
         tracing::debug!("create_post {:?}", input);
 
         let result = Post {

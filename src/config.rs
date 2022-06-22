@@ -1,9 +1,7 @@
 use crate::layers::ProximaError;
-use async_graphql::futures_util::TryFutureExt;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_appconfig::Client;
 use std::collections::HashMap;
-use std::ops::Index;
 
 pub const FILE_URL: &str = "https://file.sfx.xyz";
 pub const DEFAULT_FILE_URL: &str = "https://res.sfx.xyz/images/default.png";
@@ -52,9 +50,9 @@ impl ProximaConfig {
         Err(ProximaError::new("出错"))
     }
 
-    pub fn get_configuration(&self) -> String {
-        return self.configuration.clone();
-    }
+    //pub fn get_configuration(&self) -> String {
+    //    return self.configuration.clone();
+    //}
 
     pub fn parse_config(&mut self) {
         let split = self.configuration.split("\n");

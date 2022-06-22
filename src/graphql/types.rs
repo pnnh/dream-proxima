@@ -9,7 +9,7 @@ pub struct User {
 
 #[ComplexObject]
 impl User {
-    pub async fn posts(&self, ctx: &Context<'_>) -> Result<Vec<Post>> {
+    pub async fn posts(&self, _ctx: &Context<'_>) -> Result<Vec<Post>> {
         let post = Post {
             id: "a".to_string(),
             content: "b".to_string(),
@@ -31,7 +31,7 @@ pub struct Post {
 
 #[ComplexObject]
 impl Post {
-    pub async fn user(&self, ctx: &Context<'_>) -> Result<Option<Box<User>>> {
+    pub async fn user(&self, _ctx: &Context<'_>) -> Result<Option<Box<User>>> {
         let user = User {
             id: "a".to_string(),
             display_name: "b".to_string(),

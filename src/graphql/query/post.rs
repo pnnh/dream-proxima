@@ -7,7 +7,7 @@ pub struct PostQuery;
 
 #[Object]
 impl PostQuery {
-    async fn get_posts(&self, ctx: &Context<'_>) -> Result<Vec<Post>> {
+    async fn get_posts(&self, _ctx: &Context<'_>) -> Result<Vec<Post>> {
         let post = Post {
             id: "a".to_string(),
             content: "b".to_string(),

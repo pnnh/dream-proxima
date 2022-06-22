@@ -1,12 +1,6 @@
 use crate::handlers::State;
 use axum::response::Html;
-use axum::{
-    extract::Extension,
-    http::{HeaderValue, StatusCode},
-    response::IntoResponse,
-    routing::get,
-    BoxError, Router,
-};
+use axum::{extract::Extension, http::StatusCode};
 use serde_json::json;
 use std::sync::Arc;
 

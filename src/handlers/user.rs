@@ -1,13 +1,5 @@
 use axum::response::Html;
-use axum::{
-    extract::Extension,
-    extract::Path,
-    http::{HeaderValue, StatusCode},
-    response::IntoResponse,
-    routing::get,
-    BoxError, Router,
-};
-use serde::{Deserialize, Serialize};
+use axum::{extract::Extension, extract::Path, http::StatusCode};
 use serde_json::json;
 
 use crate::handlers::State;

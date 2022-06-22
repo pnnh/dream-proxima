@@ -1,30 +1,14 @@
-use serde::Deserialize;
-use std::env;
-use std::io::{BufWriter, Cursor, Read, Seek, SeekFrom, Write};
+use std::io::{Cursor, Read, Seek, SeekFrom};
 use std::sync::Arc;
 
-use axum::extract::Query;
 use axum::response::Html;
-use axum::{
-    extract::Extension,
-    http::{header, HeaderValue, StatusCode},
-    response::IntoResponse,
-    routing::get,
-    BoxError, Router,
-};
-use bb8::Pool;
-use bb8_postgres::PostgresConnectionManager;
+use axum::{extract::Extension, http::StatusCode};
 use chrono::{TimeZone, Utc};
-use handlebars::Handlebars;
-use serde_json::json;
-use tokio_postgres::NoTls;
-use tower::ServiceBuilder;
-use tower_http::ServiceBuilderExt;
 
 use crate::handlers::State;
-use crate::{helpers, layers};
+use crate::layers;
 
-use xml::writer::{EmitterConfig, EventWriter, XmlEvent};
+use xml::writer::{EmitterConfig, XmlEvent};
 
 pub async fn sitemap_handler<'a>(
     Extension(state): Extension<Arc<State<'_>>>,
@@ -33,8 +17,7 @@ pub async fn sitemap_handler<'a>(
 
     let query_result = conn
         .query(
-            "select articles.pk, articles.title, 
-articles.description, articles.update_time
+            "select articles.pk, articles.update_time
 from articles
 order by update_time desc;",
             &[],
@@ -46,13 +29,14 @@ order by update_time desc;",
     let mut writer = EmitterConfig::new()
         .perform_indent(true)
         .create_writer(&mut output);
-    writer.write(
-        XmlEvent::start_element("urlset")
-            .attr("xmlns", "http://www.sitemaps.org/schemas/sitemap/0.9"),
-    );
+    writer
+        .write(
+            XmlEvent::start_element("urlset")
+                .attr("xmlns", "http://www.sitemaps.org/schemas/sitemap/0.9"),
+        )
+        .map_err(layers::internal_error)?;
     for row in query_result {
         let pk: &str = row.get("pk");
-        let title: &str = row.get("title");
         let update_time: chrono::NaiveDateTime = row.get("update_time");
         let update_time_utc: chrono::DateTime<Utc> = Utc.from_utc_datetime(&update_time);
         let lastmod: String = update_time_utc.to_rfc3339();

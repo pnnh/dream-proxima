@@ -1,5 +1,5 @@
 #[derive(Debug, Clone)]
 pub struct ArticleModel {
-    pk: String,
-    title: String,
+    pub pk: String,
+    pub title: String,
 }

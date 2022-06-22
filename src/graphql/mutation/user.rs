@@ -12,7 +12,7 @@ pub struct UserMutation;
 
 #[Object]
 impl UserMutation {
-    pub async fn create_user(&self, ctx: &Context<'_>, input: CreateUserInput) -> Result<User> {
+    pub async fn create_user(&self, _ctx: &Context<'_>, input: CreateUserInput) -> Result<User> {
         tracing::debug!("create_user {:?}", input);
 
         let result = User {

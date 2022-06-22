@@ -1,23 +1,10 @@
 use serde::Deserialize;
-use std::env;
 use std::sync::Arc;
 
 use axum::extract::Query;
 use axum::response::Html;
-use axum::{
-    extract::Extension,
-    http::{header, HeaderValue, StatusCode},
-    response::IntoResponse,
-    routing::get,
-    BoxError, Router,
-};
-use bb8::Pool;
-use bb8_postgres::PostgresConnectionManager;
-use handlebars::Handlebars;
+use axum::{extract::Extension, http::StatusCode};
 use serde_json::json;
-use tokio_postgres::NoTls;
-use tower::ServiceBuilder;
-use tower_http::ServiceBuilderExt;
 
 use crate::handlers::State;
 use crate::models::IndexArticleView;

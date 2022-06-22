@@ -5,17 +5,13 @@ mod index;
 mod sitemap;
 mod user;
 
-use axum::{
-    extract::Extension, http::StatusCode, response::IntoResponse, routing::get, routing::post,
-    BoxError, Router,
-};
+use axum::{extract::Extension, response::IntoResponse, routing::get, routing::post, Router};
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use handlebars::Handlebars;
 
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use axum::http::Method;
-use std::env;
 use std::sync::Arc;
 use tokio_postgres::NoTls;
 use tower::ServiceBuilder;
@@ -26,7 +22,7 @@ use crate::{config, helpers, layers};
 use crate::config::{is_debug, ProximaConfig};
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
 use axum::response::Html;
-use tower_http::cors::{any, CorsLayer};
+use tower_http::cors::{Any, CorsLayer};
 
 use crate::graphql::schema::{build_schema, AppSchema};
 
@@ -95,8 +91,8 @@ pub async fn app() -> Router {
         // allow `GET` and `POST` when accessing the resource
         .allow_methods(vec![Method::GET, Method::POST])
         // allow requests from any origin
-        .allow_origin(any())
-        .allow_headers(any());
+        .allow_origin(Any)
+        .allow_headers(Any);
 
     let middleware = ServiceBuilder::new().add_extension(state.clone());
 

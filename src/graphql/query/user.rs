@@ -7,7 +7,7 @@ pub struct UserQuery;
 
 #[Object]
 impl UserQuery {
-    async fn get_users(&self, ctx: &Context<'_>) -> Result<Vec<User>> {
+    async fn get_users(&self, _ctx: &Context<'_>) -> Result<Vec<User>> {
         let user = User {
             id: "a".to_string(),
             display_name: "b".to_string(),
@@ -17,7 +17,7 @@ impl UserQuery {
         Ok(result)
     }
 
-    async fn get_user(&self, ctx: &Context<'_>, id: String) -> Result<Option<User>> {
+    async fn get_user(&self, _ctx: &Context<'_>, id: String) -> Result<Option<User>> {
         tracing::debug!("create_post {:?}", id);
 
         let result = User {
