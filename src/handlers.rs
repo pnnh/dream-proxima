@@ -2,7 +2,9 @@ mod about;
 mod account;
 mod article;
 mod index;
+mod sitemap;
 mod user;
+
 use axum::{
     extract::Extension, http::StatusCode, response::IntoResponse, routing::get, routing::post,
     BoxError, Router,
@@ -113,6 +115,7 @@ pub async fn app() -> Router {
             },
         )
         .route("/user/:pk", get(user::user_info_handler))
+        .route("/seo/sitemap", get(sitemap::sitemap_handler))
         .layer(cors)
         .layer(Extension(schema))
         .layer(middleware.into_inner())
