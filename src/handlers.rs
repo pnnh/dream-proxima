@@ -2,6 +2,7 @@ mod about;
 mod account;
 mod article;
 mod index;
+mod jwt;
 mod sitemap;
 mod user;
 
@@ -25,6 +26,7 @@ use axum::response::Html;
 use tower_http::cors::{Any, CorsLayer};
 
 use crate::graphql::schema::{build_schema, AppSchema};
+use crate::handlers::jwt::{authorize_handler, protected_handler};
 
 #[derive(Clone, Debug)]
 pub struct State<'reg> {
@@ -39,30 +41,6 @@ async fn graphql_handler(schema: Extension<AppSchema>, req: GraphQLRequest) -> G
 
 async fn graphql_playground() -> impl IntoResponse {
     Html(playground_source(GraphQLPlaygroundConfig::new("/graphql")))
-}
-
-fn register_template_file<'reg>(reg: &mut Handlebars) {
-    reg.register_template_file("index", "assets/templates/pages/index.hbs")
-        .unwrap();
-    reg.register_template_file("about", "assets/templates/pages/about.hbs")
-        .unwrap();
-    reg.register_template_file("styles", "assets/templates/partial/styles.hbs")
-        .unwrap();
-    reg.register_template_file("analytics", "assets/templates/partial/analytics.hbs")
-        .unwrap();
-    reg.register_template_file("footer", "assets/templates/partial/footer.hbs")
-        .unwrap();
-    reg.register_template_file("header", "assets/templates/partial/header.hbs")
-        .unwrap();
-    reg.register_template_file("headmeta", "assets/templates/partial/headmeta.hbs")
-        .unwrap();
-    reg.register_template_file("scripts", "assets/templates/partial/scripts.hbs")
-        .unwrap();
-
-    reg.register_template_file("article_read", "assets/templates/pages/article/read.hbs")
-        .unwrap();
-    reg.register_template_file("user_info", "assets/templates/pages/user/info.hbs")
-        .unwrap();
 }
 
 pub async fn app() -> Router {
@@ -112,7 +90,33 @@ pub async fn app() -> Router {
         )
         .route("/user/:pk", get(user::user_info_handler))
         .route("/seo/sitemap", get(sitemap::sitemap_handler))
+        .route("/protected", get(protected_handler))
+        .route("/authorize", post(authorize_handler))
         .layer(cors)
         .layer(Extension(schema))
         .layer(middleware.into_inner())
+}
+
+fn register_template_file<'reg>(reg: &mut Handlebars) {
+    reg.register_template_file("index", "assets/templates/pages/index.hbs")
+        .unwrap();
+    reg.register_template_file("about", "assets/templates/pages/about.hbs")
+        .unwrap();
+    reg.register_template_file("styles", "assets/templates/partial/styles.hbs")
+        .unwrap();
+    reg.register_template_file("analytics", "assets/templates/partial/analytics.hbs")
+        .unwrap();
+    reg.register_template_file("footer", "assets/templates/partial/footer.hbs")
+        .unwrap();
+    reg.register_template_file("header", "assets/templates/partial/header.hbs")
+        .unwrap();
+    reg.register_template_file("headmeta", "assets/templates/partial/headmeta.hbs")
+        .unwrap();
+    reg.register_template_file("scripts", "assets/templates/partial/scripts.hbs")
+        .unwrap();
+
+    reg.register_template_file("article_read", "assets/templates/pages/article/read.hbs")
+        .unwrap();
+    reg.register_template_file("user_info", "assets/templates/pages/user/info.hbs")
+        .unwrap();
 }
