@@ -9,23 +9,17 @@ fn main() {
         1,
         30,
         "supersecret",
-        Some("Github".to_string()),
-        "constantoine@github.com".to_string(),
+        Some("dream".to_string()),
+        "larry@sfx.xyz".to_string(),
     )
     .unwrap();
     let token = totp.generate_current().unwrap();
     println!("{}", token);
 
-    let totp = TOTP::new(
-        Algorithm::SHA1,
-        6,
-        1,
-        30,
-        "supersecret",
-        Some("Github".to_string()),
-        "constantoine@github.com".to_string(),
-    )
-    .unwrap();
+    if let Ok(v) = totp.check_current(token.as_str()) {
+        println!("check_current: {}", v);
+    }
+
     let url = totp.get_url();
     println!("{}", url);
     let code = totp.get_qr().unwrap();

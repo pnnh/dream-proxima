@@ -1,3 +1,23 @@
+use std::sync::Arc;
+
+use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
+use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
+use axum::http::Method;
+use axum::response::Html;
+use axum::{extract::Extension, response::IntoResponse, routing::get, routing::post, Router};
+use bb8::Pool;
+use bb8_postgres::PostgresConnectionManager;
+use handlebars::Handlebars;
+use tokio_postgres::NoTls;
+use tower::ServiceBuilder;
+use tower_http::cors::{Any, CorsLayer};
+use tower_http::ServiceBuilderExt;
+
+use crate::config::{is_debug, ProximaConfig};
+use crate::graphql::schema::{build_schema, AppSchema};
+use crate::handlers::jwt::{login_handler, protected_handler, register_handler};
+use crate::{config, helpers, layers};
+
 mod about;
 mod account;
 mod article;
@@ -5,28 +25,6 @@ mod index;
 mod jwt;
 mod sitemap;
 mod user;
-
-use axum::{extract::Extension, response::IntoResponse, routing::get, routing::post, Router};
-use bb8::Pool;
-use bb8_postgres::PostgresConnectionManager;
-use handlebars::Handlebars;
-
-use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
-use axum::http::Method;
-use std::sync::Arc;
-use tokio_postgres::NoTls;
-use tower::ServiceBuilder;
-use tower_http::ServiceBuilderExt;
-
-use crate::{config, helpers, layers};
-
-use crate::config::{is_debug, ProximaConfig};
-use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
-use axum::response::Html;
-use tower_http::cors::{Any, CorsLayer};
-
-use crate::graphql::schema::{build_schema, AppSchema};
-use crate::handlers::jwt::{authorize_handler, protected_handler};
 
 #[derive(Clone, Debug)]
 pub struct State<'reg> {
@@ -90,8 +88,9 @@ pub async fn app() -> Router {
         )
         .route("/user/:pk", get(user::user_info_handler))
         .route("/seo/sitemap", get(sitemap::sitemap_handler))
+        .route("/account/login", post(login_handler))
+        .route("/account/register", get(register_handler))
         .route("/protected", get(protected_handler))
-        .route("/authorize", post(authorize_handler))
         .layer(cors)
         .layer(Extension(schema))
         .layer(middleware.into_inner())
@@ -119,4 +118,9 @@ fn register_template_file<'reg>(reg: &mut Handlebars) {
         .unwrap();
     reg.register_template_file("user_info", "assets/templates/pages/user/info.hbs")
         .unwrap();
+    reg.register_template_file(
+        "account_register",
+        "assets/templates/pages/account/register.hbs",
+    )
+    .unwrap();
 }

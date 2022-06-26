@@ -6,8 +6,15 @@
 //! JWT_SECRET=secret cargo run -p example-jwt
 //! ```
 
+use std::sync::Arc;
+use std::{fmt::Display, net::SocketAddr};
+
+use crate::config::is_debug;
+use axum::extract::Query;
+use axum::response::Html;
 use axum::{
     async_trait,
+    extract::Extension,
     extract::{FromRequest, RequestParts, TypedHeader},
     headers::{authorization::Bearer, Authorization},
     http::StatusCode,
@@ -19,8 +26,10 @@ use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation}
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::{fmt::Display, net::SocketAddr};
+use totp_rs::{Algorithm, TOTP};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+use crate::handlers::State;
 
 // Quick instructions
 //
@@ -53,6 +62,50 @@ static KEYS: Lazy<Keys> = Lazy::new(|| {
     Keys::new(secret.as_bytes())
 });
 
+#[derive(Deserialize)]
+pub struct RegisterQuery {
+    account: Option<String>,
+}
+pub async fn register_handler(
+    Query(args): Query<RegisterQuery>,
+    Extension(state): Extension<Arc<State<'_>>>,
+) -> Result<Html<String>, AuthError> {
+    // 仅在开发环境下可以访问
+    if !is_debug() {
+        return Err(AuthError::MissingCredentials);
+    }
+    let mut account: String = args.account.unwrap_or("".to_string());
+    if account.is_empty() {
+        return Err(AuthError::MissingCredentials);
+    }
+    let totp = TOTP::new(
+        Algorithm::SHA1,
+        6,
+        1,
+        30,
+        std::env::var("TOTP_SECRET").unwrap(),
+        Some("dream".to_string()),
+        account,
+    )
+    .unwrap();
+    let url = totp.get_url();
+    println!("{}", url);
+    let code = totp.get_qr().unwrap();
+    println!("{}", code);
+
+    let page_data = &json!({
+        "totp_url": url,
+        "totp_qrcode": code,
+    });
+
+    let result = state
+        .registry
+        .render("account_register", page_data)
+        .map_err(|err| AuthError::MissingCredentials)?;
+
+    Ok(Html(result))
+}
+
 pub async fn protected_handler(claims: Claims) -> Result<String, AuthError> {
     // Send the protected data to the user
     Ok(format!(
@@ -61,17 +114,37 @@ pub async fn protected_handler(claims: Claims) -> Result<String, AuthError> {
     ))
 }
 
-pub async fn authorize_handler(
-    Json(payload): Json<AuthPayload>,
-) -> Result<Json<AuthBody>, AuthError> {
+pub async fn login_handler(Json(payload): Json<AuthPayload>) -> Result<Json<AuthBody>, AuthError> {
     // Check if the user sent the credentials
-    if payload.client_id.is_empty() || payload.client_secret.is_empty() {
+    if payload.account.is_empty() {
         return Err(AuthError::MissingCredentials);
     }
-    // Here you can check the user credentials from a database
-    if payload.client_id != "foo" || payload.client_secret != "bar" {
+    let totp = TOTP::new(
+        Algorithm::SHA1,
+        6,
+        1,
+        30,
+        std::env::var("TOTP_SECRET").unwrap(),
+        Some("dream".to_string()),
+        payload.account,
+    )
+    .unwrap();
+    // let token = totp.generate_current().unwrap();
+    // println!("{}", token);
+
+    // if let Err(_) = totp.check_current(payload.token.as_str()) {
+    //     return Err(AuthError::WrongCredentials);
+    // }
+    let ok = totp
+        .check_current(payload.token.as_str())
+        .map_err(|_| AuthError::WrongCredentials)?;
+    if !ok {
         return Err(AuthError::WrongCredentials);
     }
+    // Here you can check the user credentials from a database
+    // if payload.client_id != "foo" || payload.client_secret != "bar" {
+    //     return Err(AuthError::WrongCredentials);
+    // }
     let claims = Claims {
         sub: "b@b.com".to_owned(),
         company: "ACME".to_owned(),
@@ -166,8 +239,8 @@ pub struct AuthBody {
 
 #[derive(Debug, Deserialize)]
 pub struct AuthPayload {
-    client_id: String,
-    client_secret: String,
+    account: String,
+    token: String,
 }
 
 #[derive(Debug)]
