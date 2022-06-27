@@ -15,11 +15,11 @@ use tower_http::ServiceBuilderExt;
 
 use crate::config::{is_debug, ProximaConfig};
 use crate::graphql::schema::{build_schema, AppSchema};
-use crate::handlers::jwt::{login_handler, protected_handler, register_handler};
+use crate::handlers::article::article_create_handler;
+use crate::handlers::jwt::{login_handler, register_handler};
 use crate::{config, helpers, layers};
 
 mod about;
-mod account;
 mod article;
 mod index;
 mod jwt;
@@ -90,7 +90,7 @@ pub async fn app() -> Router {
         .route("/seo/sitemap", get(sitemap::sitemap_handler))
         .route("/account/login", post(login_handler))
         .route("/account/register", get(register_handler))
-        .route("/protected", get(protected_handler))
+        .route("/article/create", post(article_create_handler))
         .layer(cors)
         .layer(Extension(schema))
         .layer(middleware.into_inner())

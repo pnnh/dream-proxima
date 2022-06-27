@@ -1,3 +1,5 @@
+pub(crate) mod article;
+
 use crate::config;
 
 pub fn get_photo_or_default(photo_path: &str) -> String {

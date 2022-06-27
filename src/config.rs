@@ -8,8 +8,9 @@ pub const DEFAULT_FILE_URL: &str = "https://res.sfx.xyz/images/default.png";
 
 #[derive(Debug, Clone)]
 pub struct ProximaConfig {
-    configuration: String,
     pub dsn: String,
+    pub totp_secret: String,
+    pub jwt_secret: String,
 }
 
 impl ProximaConfig {
@@ -39,25 +40,21 @@ impl ProximaConfig {
             let data = blob.clone().into_inner();
             let content = String::from_utf8(data)
                 .map_err(|err| ProximaError::from_string(err.to_string()))?;
-            //tracing::debug!("获取到配置\n{}", content);
-            let mut config = ProximaConfig {
-                configuration: content,
-                dsn: "".to_string(),
-            };
-            config.parse_config();
-            return Ok(config);
+
+            return ProximaConfig::parse_config(&content);
         }
         Err(ProximaError::new("出错"))
     }
 
-    //pub fn get_configuration(&self) -> String {
-    //    return self.configuration.clone();
-    //}
-
-    pub fn parse_config(&mut self) {
-        let split = self.configuration.split("\n");
+    pub fn parse_config(configuration: &String) -> Result<ProximaConfig, ProximaError> {
+        let split = configuration.split("\n");
         let mut config_map: HashMap<String, String> = HashMap::new();
 
+        let mut config = ProximaConfig {
+            dsn: "".to_string(),
+            totp_secret: "".to_string(),
+            jwt_secret: "".to_string(),
+        };
         for s in split {
             let index = s.find("=").unwrap_or(0);
             if index > 0 {
@@ -65,11 +62,23 @@ impl ProximaConfig {
                 let key = s[..index].to_string();
                 let value = s[index + 1..].to_string();
                 match key.as_str() {
-                    "DSN" => self.dsn = value,
+                    "DSN" => config.dsn = value,
+                    "TOTP_SECRET" => config.totp_secret = value,
+                    "JWT_KEY" => config.jwt_secret = value,
                     _ => {}
                 }
             }
         }
+        if config.dsn.is_empty() {
+            return Err(ProximaError::new("未配置DSN"));
+        }
+        if config.totp_secret.is_empty() {
+            return Err(ProximaError::new("未配置TOTP_SECRET"));
+        }
+        if config.jwt_secret.is_empty() {
+            return Err(ProximaError::new("未配置JWT_SECRET"));
+        }
+        Ok(config)
     }
 }
 

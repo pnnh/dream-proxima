@@ -1,4 +1,6 @@
 mod article;
+mod jwt;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

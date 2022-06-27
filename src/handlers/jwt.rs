@@ -1,11 +1,3 @@
-//! Example JWT authorization/authentication.
-//!
-//! Run with
-//!
-//! ```not_rust
-//! JWT_SECRET=secret cargo run -p example-jwt
-//! ```
-
 use std::sync::Arc;
 use std::{fmt::Display, net::SocketAddr};
 
@@ -31,36 +23,10 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::handlers::State;
 
-// Quick instructions
-//
-// - get an authorization token:
-//
-// curl -s \
-//     -w '\n' \
-//     -H 'Content-Type: application/json' \
-//     -d '{"client_id":"foo","client_secret":"bar"}' \
-//     http://localhost:3000/authorize
-//
-// - visit the protected area using the authorized token
-//
-// curl -s \
-//     -w '\n' \
-//     -H 'Content-Type: application/json' \
-//     -H 'Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJiQGIuY29tIiwiY29tcGFueSI6IkFDTUUiLCJleHAiOjEwMDAwMDAwMDAwfQ.M3LAZmrzUkXDC1q5mSzFAs_kJrwuKz3jOoDmjJ0G4gM' \
-//     http://localhost:3000/protected
-//
-// - try to visit the protected area using an invalid token
-//
-// curl -s \
-//     -w '\n' \
-//     -H 'Content-Type: application/json' \
-//     -H 'Authorization: Bearer blahblahblah' \
-//     http://localhost:3000/protected
-
-static KEYS: Lazy<Keys> = Lazy::new(|| {
-    let secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
-    Keys::new(secret.as_bytes())
-});
+// static KEYS: Lazy<Keys> = Lazy::new(|| {
+//     let secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+//     Keys::new(secret.as_bytes())
+// });
 
 #[derive(Deserialize)]
 pub struct RegisterQuery {
@@ -78,12 +44,13 @@ pub async fn register_handler(
     if account.is_empty() {
         return Err(AuthError::MissingCredentials);
     }
+    let secret = &state.config.totp_secret;
     let totp = TOTP::new(
         Algorithm::SHA1,
         6,
         1,
         30,
-        std::env::var("TOTP_SECRET").unwrap(),
+        secret,
         Some("dream".to_string()),
         account,
     )
@@ -106,25 +73,21 @@ pub async fn register_handler(
     Ok(Html(result))
 }
 
-pub async fn protected_handler(claims: Claims) -> Result<String, AuthError> {
-    // Send the protected data to the user
-    Ok(format!(
-        "Welcome to the protected area :)\nYour data:\n{}",
-        claims
-    ))
-}
-
-pub async fn login_handler(Json(payload): Json<AuthPayload>) -> Result<Json<AuthBody>, AuthError> {
+pub async fn login_handler(
+    Json(payload): Json<AuthPayload>,
+    Extension(state): Extension<Arc<State<'_>>>,
+) -> Result<Json<AuthBody>, AuthError> {
     // Check if the user sent the credentials
     if payload.account.is_empty() {
         return Err(AuthError::MissingCredentials);
     }
+    let secret = &state.config.totp_secret;
     let totp = TOTP::new(
         Algorithm::SHA1,
         6,
         1,
         30,
-        std::env::var("TOTP_SECRET").unwrap(),
+        &secret,
         Some("dream".to_string()),
         payload.account,
     )
@@ -136,7 +99,7 @@ pub async fn login_handler(Json(payload): Json<AuthPayload>) -> Result<Json<Auth
     //     return Err(AuthError::WrongCredentials);
     // }
     let ok = totp
-        .check_current(payload.token.as_str())
+        .check_current(payload.code.as_str())
         .map_err(|_| AuthError::WrongCredentials)?;
     if !ok {
         return Err(AuthError::WrongCredentials);
@@ -151,8 +114,9 @@ pub async fn login_handler(Json(payload): Json<AuthPayload>) -> Result<Json<Auth
         // Mandatory expiry time as UTC timestamp
         exp: 2000000000, // May 2033
     };
+    let jwt_keys = Keys::new(&state.config.jwt_secret.as_bytes());
     // Create the authorization token
-    let token = encode(&Header::default(), &claims, &KEYS.encoding)
+    let token = encode(&Header::default(), &claims, &jwt_keys.encoding)
         .map_err(|_| AuthError::TokenCreation)?;
 
     // Send the authorized token
@@ -188,8 +152,16 @@ where
                 .await
                 .map_err(|_| AuthError::InvalidToken)?;
         // Decode the user data
-        let token_data = decode::<Claims>(bearer.token(), &KEYS.decoding, &Validation::default())
+        type Extractors = (Extension<Arc<State<'static>>>);
+
+        let (Extension(state)) = Extractors::from_request(req)
+            .await
             .map_err(|_| AuthError::InvalidToken)?;
+
+        let jwt_keys = Keys::new(&state.config.jwt_secret.as_bytes());
+        let token_data =
+            decode::<Claims>(bearer.token(), &jwt_keys.decoding, &Validation::default())
+                .map_err(|_| AuthError::InvalidToken)?;
 
         Ok(token_data.claims)
     }
@@ -240,7 +212,7 @@ pub struct AuthBody {
 #[derive(Debug, Deserialize)]
 pub struct AuthPayload {
     account: String,
-    token: String,
+    code: String,
 }
 
 #[derive(Debug)]
