@@ -1,3 +1,4 @@
+use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 use std::{fmt::Display, net::SocketAddr};
 
@@ -14,6 +15,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use chrono::format::format;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
@@ -109,8 +111,8 @@ pub async fn login_handler(
     //     return Err(AuthError::WrongCredentials);
     // }
     let claims = Claims {
-        sub: "b@b.com".to_owned(),
-        company: "ACME".to_owned(),
+        // sub: "b@b.com".to_owned(),
+        // company: "ACME".to_owned(),
         // Mandatory expiry time as UTC timestamp
         exp: 2000000000, // May 2033
     };
@@ -174,6 +176,7 @@ impl IntoResponse for AuthError {
             AuthError::MissingCredentials => (StatusCode::BAD_REQUEST, "Missing credentials"),
             AuthError::TokenCreation => (StatusCode::INTERNAL_SERVER_ERROR, "Token creation error"),
             AuthError::InvalidToken => (StatusCode::BAD_REQUEST, "Invalid token"),
+            _ => (StatusCode::BAD_REQUEST, "Unknown error"),
         };
         let body = Json(json!({
             "error": error_message,
@@ -196,11 +199,11 @@ impl Keys {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, Default)]
 pub struct Claims {
-    sub: String,
-    company: String,
-    exp: usize,
+    // pub(crate) sub: String,
+    // pub(crate) company: String,
+    pub(crate) exp: usize,
 }
 
 #[derive(Debug, Serialize)]
@@ -221,4 +224,48 @@ pub enum AuthError {
     MissingCredentials,
     TokenCreation,
     InvalidToken,
+    InvalidData,
 }
+
+impl Display for AuthError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl std::error::Error for AuthError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::InvalidData => Some(&InvalidDataError {}),
+            _ => None,
+        }
+    }
+}
+
+// impl From for AuthError {
+//     fn from(error: std::io::Error) -> Self {
+//         AuthError::InvalidData(io_error)
+//     }
+// }
+
+#[derive(Debug)]
+pub struct InvalidDataError;
+
+impl Display for InvalidDataError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
+
+impl std::error::Error for InvalidDataError {}
+
+#[derive(Debug)]
+pub struct UnknownError;
+
+impl Display for UnknownError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
+
+impl std::error::Error for UnknownError {}
