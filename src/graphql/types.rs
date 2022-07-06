@@ -1,4 +1,4 @@
-use async_graphql::{ComplexObject, Context, Result, SimpleObject};
+use async_graphql::{ComplexObject, Context, Object, Result, SimpleObject};
 
 #[derive(SimpleObject, Debug)]
 #[graphql(complex)]
@@ -21,23 +21,16 @@ impl User {
     }
 }
 
-#[derive(SimpleObject)]
-#[graphql(complex)]
 pub struct Post {
     pub id: String,
     pub content: String,
     pub user_id: String,
 }
 
-#[ComplexObject]
+#[Object]
 impl Post {
-    pub async fn user(&self, _ctx: &Context<'_>) -> Result<Option<Box<User>>> {
-        let user = User {
-            id: "a".to_string(),
-            display_name: "b".to_string(),
-        };
-
-        Ok(Option::from(Box::new(user)))
+    async fn id(&self) -> &str {
+        self.id.as_str()
     }
 }
 

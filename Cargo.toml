@@ -34,3 +34,4 @@ totp-rs = { version = "2.0", features = ["qr", "otpauth"] }
 nanoid = "0.4.0"
 async-trait = "0.1.56"
 mime = "0.3.16"
+postgres-types = "0.2.3"

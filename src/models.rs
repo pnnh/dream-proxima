@@ -1,5 +1,7 @@
-mod article;
-mod jwt;
+pub(crate) mod article;
+pub(crate) mod claims;
+pub(crate) mod error;
+pub(crate) mod jwt;
 
 use serde::{Deserialize, Serialize};
 
