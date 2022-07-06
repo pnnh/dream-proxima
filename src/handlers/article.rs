@@ -113,7 +113,7 @@ pub struct CreatePayload {
 }
 
 #[derive(Debug, Serialize)]
-pub(crate) struct CreateBody {
+pub struct CreateBody {
     pk: String,
 }
 
