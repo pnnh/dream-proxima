@@ -1,5 +1,6 @@
-use async_graphql::{ComplexObject, Context, Object, Result, SimpleObject};
+use async_graphql::Object;
 
+#[derive(Debug, Clone)]
 pub struct Article {
     pub title: String,
 }
@@ -7,6 +8,6 @@ pub struct Article {
 #[Object]
 impl Article {
     async fn title(&self) -> &str {
-        self.title.as_str()
+        &self.title
     }
 }

@@ -2,6 +2,7 @@ use crate::graphql::types::Article;
 use crate::handlers::State;
 use crate::models::error::AuthError;
 use async_graphql::{Context, InputObject, Object, Result};
+use chrono::Utc;
 use nanoid::nanoid;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -18,7 +19,7 @@ pub(crate) struct ArticleBody {
     children: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct CreateBody {
     pk: String,
 }
@@ -26,7 +27,7 @@ pub struct CreateBody {
 #[Object]
 impl CreateBody {
     async fn pk(&self) -> &str {
-        self.pk.as_str()
+        &self.pk
     }
 }
 
@@ -54,13 +55,16 @@ impl ArticleMutation {
             children: "children".to_string(),
         };
         let publish = if input.publish { 1 } else { 0 };
+        let naive_date_time = Utc::now().naive_utc();
         conn
             .execute(
                 "insert into articles(pk, title, body, create_time, update_time, creator, keywords, description, status)
-    values($1, $2, $3,'2022-07-05 21:54:53','2022-07-05 21:54:57','x','y','z', $4);",
+    values($1, $2, $3, $4, $5,'x','y','z', $6);",
                 &[&pk,
                     &input.title,
                     &postgres_types::Json::<ArticleBody>(article_body),
+                    &naive_date_time,
+                    &naive_date_time,
                     &publish,
                 ],
             )
