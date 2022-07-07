@@ -1,12 +1,7 @@
 pub mod article;
-pub mod post;
-pub mod user;
 
 use crate::graphql::query::article::IndexQuery;
-pub use post::PostQuery;
-pub use user::UserQuery;
+pub use article::ArticleQuery;
 
-// Add your other ones here to create a unified Query object
-// e.x. Query(PostQuery, OtherQuery, OtherOtherQuery)
 #[derive(async_graphql::MergedObject, Default)]
-pub struct Query(PostQuery, UserQuery, IndexQuery);
+pub struct QueryRoot(ArticleQuery, IndexQuery);
