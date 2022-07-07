@@ -49,6 +49,7 @@ accounts.nickname, articles_views.views
 from articles
     left join accounts on articles.creator = accounts.pk
 	left join articles_views on articles.pk = articles_views.pk
+where articles.status = 1
 order by update_time desc offset $1 limit $2;",
             &[&offset, &limit],
         )

@@ -1,13 +1,11 @@
 use async_graphql::{ComplexObject, Context, Object, Result, SimpleObject};
 
-#[derive(SimpleObject, Debug)]
-#[graphql(complex)]
 pub struct User {
     pub id: String,
     pub display_name: String,
 }
 
-#[ComplexObject]
+#[Object]
 impl User {
     pub async fn posts(&self, _ctx: &Context<'_>) -> Result<Vec<Post>> {
         let post = Post {
@@ -34,7 +32,13 @@ impl Post {
     }
 }
 
-#[derive(SimpleObject, Debug)]
 pub struct Article {
     pub title: String,
+}
+
+#[Object]
+impl Article {
+    async fn title(&self) -> &str {
+        self.title.as_str()
+    }
 }

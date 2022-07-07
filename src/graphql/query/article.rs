@@ -33,6 +33,7 @@ accounts.nickname, articles_views.views
 from articles
     left join accounts on articles.creator = accounts.pk
 	left join articles_views on articles.pk = articles_views.pk
+where articles.status = 1
 order by update_time desc offset $1 limit $2;",
                 &[&offset_value, &limit_value],
             )
@@ -59,7 +60,7 @@ order by update_time desc offset $1 limit $2;",
         let conn = state.pool.get().await.expect("graphql count获取pool出错");
 
         let query_result = conn
-            .query("select count(*) from articles;", &[])
+            .query("select count(*) from articles where status = 1;", &[])
             .await
             .expect("graphql count执行查询出错");
 

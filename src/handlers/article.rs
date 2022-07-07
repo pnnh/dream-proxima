@@ -110,6 +110,7 @@ where articles.pk = $1;",
 pub struct CreatePayload {
     title: String,
     body: String,
+    publish: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -140,11 +141,16 @@ pub async fn article_create_handler(
     let article_body = ArticleBody {
         children: "children".to_string(),
     };
+    let publish = if payload.publish { 1 } else { 0 };
     let query_result = conn
             .execute(
-                "insert into articles(pk, title, body, create_time, update_time, creator, keywords, description)
-    values($1, 'a', $2,'2022-07-05 21:54:53','2022-07-05 21:54:57','x','y','z');",
-                &[&pk, &postgres_types::Json::<ArticleBody>(article_body)],
+                "insert into articles(pk, title, body, create_time, update_time, creator, keywords, description, status)
+    values($1, $2, $3,'2022-07-05 21:54:53','2022-07-05 21:54:57','x','y','z', $4);",
+                &[&pk,
+                    &payload.title,
+                    &postgres_types::Json::<ArticleBody>(article_body),
+                    &publish,
+                ],
             )
             .await
             .map_err(|err| AuthError::Postgresql(err))?;
