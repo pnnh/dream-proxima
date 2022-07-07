@@ -17,10 +17,7 @@ use tower_http::ServiceBuilderExt;
 use crate::config::{is_debug, ProximaConfig};
 use crate::graphql::mutation::MutationRoot;
 use crate::graphql::query::QueryRoot;
-use crate::graphql::schema::{
-    graphql_mutation_handler, graphql_mutation_playground, graphql_query_handler,
-    graphql_query_playground,
-};
+use crate::graphql::schema::{graphql_mutation_handler, graphql_mutation_playground};
 use crate::handlers::jwt::{login_handler, register_handler};
 use crate::models::claims::Claims;
 use crate::{config, helpers, layers};
@@ -74,14 +71,6 @@ pub async fn app() -> Router {
         .route("/", get(index::index_handler))
         .route("/about", get(about::about_handler))
         .route("/article/read/:pk", get(article::article_read_handler))
-        .route(
-            "/graphql/query",
-            if config::is_debug() {
-                get(graphql_query_playground).post(graphql_query_handler)
-            } else {
-                post(graphql_query_handler)
-            },
-        )
         .route(
             "/graphql/mutation",
             if config::is_debug() {

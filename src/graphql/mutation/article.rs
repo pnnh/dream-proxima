@@ -44,7 +44,12 @@ impl ArticleMutation {
     ) -> Result<CreateBody> {
         tracing::debug!("create_post {:?}", input);
         let state = ctx.data::<Arc<State>>().unwrap();
-        let claims = ctx.data::<Claims>().unwrap();
+        let claims = ctx
+            .data::<Option<Claims>>()
+            .map_err(|err| AuthError::InvalidToken)?;
+        if claims.is_none() {
+            return Err(async_graphql::Error::from(AuthError::InvalidToken));
+        }
         tracing::debug!("claims {:?}", claims);
 
         let conn = state
