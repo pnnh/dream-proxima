@@ -1,5 +1,6 @@
 use crate::graphql::types::Article;
 use crate::handlers::State;
+use crate::models::claims::Claims;
 use crate::models::error::AuthError;
 use async_graphql::{Context, InputObject, Object, Result};
 use chrono::Utc;
@@ -26,8 +27,8 @@ pub struct CreateBody {
 
 #[Object]
 impl CreateBody {
-    async fn pk(&self) -> &str {
-        &self.pk
+    async fn pk(&self) -> String {
+        self.pk.clone()
     }
 }
 
@@ -43,6 +44,8 @@ impl ArticleMutation {
     ) -> Result<CreateBody> {
         tracing::debug!("create_post {:?}", input);
         let state = ctx.data::<Arc<State>>().unwrap();
+        let claims = ctx.data::<Claims>().unwrap();
+        tracing::debug!("claims {:?}", claims);
 
         let conn = state
             .pool

@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
+use async_graphql::{EmptyMutation, EmptySubscription, Schema};
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
 use axum::http::Method;
 use axum::response::Html;
@@ -14,8 +15,14 @@ use tower_http::cors::{Any, CorsLayer};
 use tower_http::ServiceBuilderExt;
 
 use crate::config::{is_debug, ProximaConfig};
-use crate::graphql::schema::{build_schema, AppSchema};
+use crate::graphql::mutation::MutationRoot;
+use crate::graphql::query::QueryRoot;
+use crate::graphql::schema::{
+    graphql_mutation_handler, graphql_mutation_playground, graphql_query_handler,
+    graphql_query_playground,
+};
 use crate::handlers::jwt::{login_handler, register_handler};
+use crate::models::claims::Claims;
 use crate::{config, helpers, layers};
 
 mod about;
@@ -30,14 +37,6 @@ pub struct State<'reg> {
     pub registry: Handlebars<'reg>,
     pub pool: layers::ConnectionPool,
     pub config: ProximaConfig,
-}
-
-async fn graphql_handler(schema: Extension<AppSchema>, req: GraphQLRequest) -> GraphQLResponse {
-    schema.execute(req.into_inner()).await.into()
-}
-
-async fn graphql_playground() -> impl IntoResponse {
-    Html(playground_source(GraphQLPlaygroundConfig::new("/graphql")))
 }
 
 pub async fn app() -> Router {
@@ -71,18 +70,24 @@ pub async fn app() -> Router {
 
     let middleware = ServiceBuilder::new().add_extension(state.clone());
 
-    let schema = build_schema(state.clone()).await;
-
     Router::new()
         .route("/", get(index::index_handler))
         .route("/about", get(about::about_handler))
         .route("/article/read/:pk", get(article::article_read_handler))
         .route(
-            "/graphql",
+            "/graphql/query",
             if config::is_debug() {
-                get(graphql_playground).post(graphql_handler)
+                get(graphql_query_playground).post(graphql_query_handler)
             } else {
-                post(graphql_handler)
+                post(graphql_query_handler)
+            },
+        )
+        .route(
+            "/graphql/mutation",
+            if config::is_debug() {
+                get(graphql_mutation_playground).post(graphql_mutation_handler)
+            } else {
+                post(graphql_mutation_handler)
             },
         )
         .route("/user/:pk", get(user::user_info_handler))
@@ -90,7 +95,6 @@ pub async fn app() -> Router {
         .route("/account/login", post(login_handler))
         .route("/account/register", get(register_handler))
         .layer(cors)
-        .layer(Extension(schema))
         .layer(middleware.into_inner())
 }
 

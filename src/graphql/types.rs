@@ -7,7 +7,7 @@ pub struct Article {
 
 #[Object]
 impl Article {
-    async fn title(&self) -> &str {
-        &self.title
+    async fn title(&self) -> String {
+        self.title.clone()
     }
 }
