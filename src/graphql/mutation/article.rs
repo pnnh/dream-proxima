@@ -13,6 +13,8 @@ pub struct CreateArticleInput {
     title: String,
     body: String,
     publish: bool,
+    keywords: Option<String>,
+    description: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -44,40 +46,54 @@ impl ArticleMutation {
     ) -> Result<CreateBody> {
         tracing::debug!("create_post {:?}", input);
         let state = ctx.data::<Arc<State>>().unwrap();
-        let claims = ctx
+        let auth = ctx
             .data::<Option<Claims>>()
-            .map_err(|err| AuthError::InvalidToken)?;
-        if claims.is_none() {
+            .map_err(|_| AuthError::InvalidToken)?;
+        if auth.is_none() {
             return Err(async_graphql::Error::from(AuthError::InvalidToken));
         }
-        tracing::debug!("claims {:?}", claims);
 
         let conn = state
             .pool
             .get()
             .await
-            .map_err(|err| AuthError::InvalidToken)?;
+            .map_err(|_| AuthError::InvalidToken)?;
 
         let pk = nanoid!(12);
         let article_body = ArticleBody {
-            children: "children".to_string(),
+            children: input.body,
         };
         let publish = if input.publish { 1 } else { 0 };
         let naive_date_time = Utc::now().naive_utc();
-        conn
-            .execute(
-                "insert into articles(pk, title, body, create_time, update_time, creator, keywords, description, status)
-    values($1, $2, $3, $4, $5,'x','y','z', $6);",
-                &[&pk,
-                    &input.title,
-                    &postgres_types::Json::<ArticleBody>(article_body),
-                    &naive_date_time,
-                    &naive_date_time,
-                    &publish,
-                ],
-            )
-            .await
-            .map_err(|err| AuthError::Postgresql(err))?;
+        let claims = auth.clone().unwrap();
+        let keywords = if let Some(v) = input.keywords {
+            v
+        } else {
+            "".to_string()
+        };
+        let description = if let Some(v) = input.description {
+            v
+        } else {
+            "".to_string()
+        };
+        conn.execute(
+            "insert into articles(pk, title, body, create_time, update_time, creator, 
+                keywords, description, status, template)
+    values($1, $2, $3, $4, $5, $6, $7, $8, $9, 1);",
+            &[
+                &pk,
+                &input.title,
+                &postgres_types::Json::<ArticleBody>(article_body),
+                &naive_date_time,
+                &naive_date_time,
+                &claims.user,
+                &keywords,
+                &description,
+                &publish,
+            ],
+        )
+        .await
+        .map_err(|err| AuthError::Postgresql(err))?;
 
         let result = CreateBody { pk: pk };
         Ok(result)

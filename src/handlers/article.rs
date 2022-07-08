@@ -21,7 +21,7 @@ use crate::models::jwt::Protected;
 use crate::utils::article::{build_body, TocItem};
 use crate::{layers, utils};
 
-pub async fn article_read_handler<'a>(
+pub async fn article_read_handler(
     Path(params): Path<HashMap<String, String>>,
     Extension(state): Extension<Arc<State<'_>>>,
 ) -> Result<Html<String>, (StatusCode, String)> {

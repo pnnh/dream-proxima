@@ -93,30 +93,38 @@ pub async fn login_handler(
         30,
         &secret,
         Some("dream".to_string()),
-        payload.account,
+        payload.account.clone(),
     )
     .unwrap();
-    // let token = totp.generate_current().unwrap();
-    // println!("{}", token);
 
-    // if let Err(_) = totp.check_current(payload.token.as_str()) {
-    //     return Err(AuthError::WrongCredentials);
-    // }
     let ok = totp
         .check_current(payload.code.as_str())
         .map_err(|_| AuthError::WrongCredentials)?;
     if !ok {
         return Err(AuthError::WrongCredentials);
     }
-    // Here you can check the user credentials from a database
-    // if payload.client_id != "foo" || payload.client_secret != "bar" {
-    //     return Err(AuthError::WrongCredentials);
-    // }
+
+    let conn = state
+        .pool
+        .get()
+        .await
+        .map_err(|_| AuthError::WrongCredentials)?;
+
+    let uname = &payload.account;
+    let query_result = conn
+        .query("select accounts.pk from accounts where uname=$1", &[&uname])
+        .await
+        .map_err(|_| AuthError::WrongCredentials)?;
+
+    if query_result.len() < 1 {
+        return Err(AuthError::WrongCredentials);
+    }
+
+    let pk: String = query_result[0].get("pk");
+
     let claims = Claims {
-        // sub: "b@b.com".to_owned(),
-        // company: "ACME".to_owned(),
-        // Mandatory expiry time as UTC timestamp
         exp: 2000000000, // May 2033
+        user: pk,
     };
     let jwt_keys = Keys::new(&state.config.jwt_secret.as_bytes());
     // Create the authorization token

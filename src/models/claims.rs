@@ -24,11 +24,12 @@ impl Keys {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct Claims {
     // pub(crate) sub: String,
     // pub(crate) company: String,
     pub(crate) exp: usize,
+    pub(crate) user: String,
 }
 
 #[derive(Debug, Serialize)]
