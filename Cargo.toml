@@ -1,5 +1,6 @@
 [workspace]
 
 members = [
+    "packages/libfoo_rs",
     "packages/server"
 ]

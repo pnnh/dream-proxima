@@ -2,7 +2,10 @@
 name = "server"
 version = "0.1.0"
 edition = "2021"
-build = "build.rs"
+
+[[bin]]
+name = "main"
+path = "src/main.rs"
 
 [dependencies]
 libc = "0.2.112"
@@ -38,7 +41,4 @@ nanoid = "0.4.0"
 async-trait = "0.1.56"
 mime = "0.3.16"
 postgres-types = "0.2.3"
-
-[build-dependencies]
-cc = "1.0.72"
-cmake = "0.1"
+foo_rs = { path = "../libfoo_rs" }

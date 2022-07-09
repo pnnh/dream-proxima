@@ -1,3 +1,4 @@
+use foo_rs::{testcall, testcall_cpp};
 use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -11,6 +12,15 @@ mod utils;
 
 #[tokio::main]
 async fn main() {
+    println!("Hello, world from Rust!");
+
+    // calling the function from foo library
+    unsafe {
+        testcall(3.14159);
+    };
+    unsafe {
+        testcall_cpp(3.14159);
+    };
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
             std::env::var("RUST_LOG").unwrap_or_else(|_| "debug".into()),

@@ -4,12 +4,12 @@ use cmake::Config;
 use std::env;
 
 fn main() {
-    let dst = Config::new("libfoo").build();
+    let dst = Config::new("../libfoo").build();
 
     println!("cargo:rustc-link-search=native={}", dst.display());
     println!("cargo:rustc-link-lib=static=foo");
 
-    let dst_cpp = Config::new("libfoo++").build();
+    let dst_cpp = Config::new("../libfoo++").build();
     println!("cargo:rustc-link-search=native={}", dst_cpp.display());
     println!("cargo:rustc-link-lib=static=foo++");
     let target = env::var("TARGET").unwrap();
