@@ -7,79 +7,118 @@ use std::error;
 use std::fmt::{Debug, Display, Formatter};
 
 #[derive(Debug)]
-pub enum AuthError {
+pub struct ProximaError {
+    pub status: StatusCode,
+    pub message: String,
+}
+
+impl ProximaError {
+    pub fn new(message: &str) -> ProximaError {
+        ProximaError {
+            status: StatusCode::INTERNAL_SERVER_ERROR,
+            message: message.to_string(),
+        }
+    }
+    pub fn from_string(message: String) -> ProximaError {
+        ProximaError {
+            status: StatusCode::INTERNAL_SERVER_ERROR,
+            message,
+        }
+    }
+}
+
+impl Display for ProximaError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "proxima error: {}", self.message)
+    }
+}
+
+impl<T> From<DreamError<T>> for ProximaError
+// where
+//     T: error::Error,
+{
+    fn from(error: DreamError<T>) -> Self {
+        ProximaError::new(error.to_string().as_str())
+    }
+}
+
+impl IntoResponse for ProximaError {
+    fn into_response(self) -> Response {
+        let body = Json(json!({
+            "error": self.message,
+        }));
+        (self.status, body).into_response()
+    }
+}
+
+#[derive(Debug)]
+pub struct RuntimeError;
+
+impl Display for RuntimeError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
+
+impl std::error::Error for RuntimeError {}
+
+pub type SomeError = DreamError<RuntimeError>;
+pub type OtherError<T> = DreamError<T>;
+
+pub enum DreamError<T>
+// where
+//     T: error::Error,
+{
     WrongCredentials,
     MissingCredentials,
     TokenCreation,
-    InvalidToken,
     InvalidData,
+    InvalidToken,
+    InvalidParameter,
+    NotFound,
+    EmptyData,
+    Graphql(async_graphql::Error),
+    BB8Postgres(bb8::RunError<T>),
     Postgresql(tokio_postgres::Error),
-    Unknown,
+    Handlebars(handlebars::RenderError),
+    Unknown(T),
 }
 
-impl Display for AuthError {
+impl<T> Display for DreamError<T>
+// where
+//     T: error::Error,
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self)
     }
 }
 
-impl std::error::Error for AuthError {
+impl<T> Debug for DreamError<T>
+// where
+//     T: error::Error,
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
+
+impl<T> std::error::Error for DreamError<T>
+where
+    T: error::Error + 'static,
+{
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Self::InvalidData => Some(&InvalidDataError {}),
+            Self::Unknown(inner) => Some(inner),
             _ => None,
         }
     }
 }
 
-// impl From for AuthError {
-//     fn from(error: std::io::Error) -> Self {
-//         AuthError::InvalidData(io_error)
-//     }
-// }
-
-#[derive(Debug)]
-pub struct InvalidDataError;
-
-impl Display for InvalidDataError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        todo!()
-    }
-}
-
-impl std::error::Error for InvalidDataError {}
-
-#[derive(Debug)]
-pub struct UnknownError;
-
-impl Display for UnknownError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        todo!()
-    }
-}
-
-impl std::error::Error for UnknownError {}
-
-impl IntoResponse for AuthError {
-    fn into_response(self) -> Response {
-        let (status, error_message) = match self {
-            AuthError::WrongCredentials => {
-                (StatusCode::UNAUTHORIZED, "Wrong credentials".to_string())
-            }
-            AuthError::MissingCredentials => {
-                (StatusCode::BAD_REQUEST, "Missing credentials".to_string())
-            }
-            AuthError::TokenCreation => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Token creation error".to_string(),
-            ),
-            AuthError::InvalidToken => (StatusCode::BAD_REQUEST, "Invalid token".to_string()),
-            AuthError::Postgresql(inner) => (StatusCode::BAD_REQUEST, inner.to_string()),
-            _ => (StatusCode::BAD_REQUEST, "Unknown error".to_string()),
-        };
-        let body = Json(json!({
-            "error": error_message,
-        }));
-        (status, body).into_response()
+impl<T> From<T> for DreamError<T>
+where
+    T: error::Error,
+{
+    fn from(error: T) -> Self {
+        Self::Unknown(error)
     }
 }

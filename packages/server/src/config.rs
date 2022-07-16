@@ -1,4 +1,4 @@
-use crate::layers::ProximaError;
+use crate::models::error::ProximaError;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_appconfig::Client;
 use std::collections::HashMap;

@@ -3,6 +3,7 @@ use axum::{extract::Extension, extract::Path, http::StatusCode};
 use serde_json::json;
 
 use crate::handlers::State;
+use crate::models::error::{DreamError, ProximaError, SomeError};
 use crate::{layers, utils};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -10,13 +11,17 @@ use std::sync::Arc;
 pub async fn user_info_handler<'a>(
     Path(params): Path<HashMap<String, String>>,
     Extension(state): Extension<Arc<State>>,
-) -> Result<Html<String>, (StatusCode, String)> {
+) -> Result<Html<String>, ProximaError> {
     let pk = params
         .get("pk")
-        .ok_or_else(|| (StatusCode::BAD_REQUEST, "pk参数有误".to_string()))?;
+        .ok_or_else(|| SomeError::InvalidParameter)?;
     tracing::debug!("pk:{}", pk,);
 
-    let conn = state.pool.get().await.map_err(layers::internal_error)?;
+    let conn = state
+        .pool
+        .get()
+        .await
+        .map_err(|err| DreamError::Unknown(err))?;
 
     let query_result = conn
         .query(
@@ -27,10 +32,10 @@ where accounts.pk = $1;",
             &[&pk],
         )
         .await
-        .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?;
+        .map_err(|err| DreamError::Unknown(err))?;
 
     if query_result.len() < 1 {
-        return Err((StatusCode::NOT_FOUND, "用户未找到".to_string()));
+        return Err(ProximaError::new("用户未找到"));
     }
 
     let nickname: &str = query_result[0].get("nickname");
@@ -54,7 +59,7 @@ where accounts.pk = $1;",
     let result = state
         .registry
         .render("user_info", page_data)
-        .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?;
+        .map_err(|err| DreamError::Unknown(err))?;
 
     Ok(Html(result))
 }

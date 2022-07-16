@@ -8,12 +8,17 @@ use chrono::{TimeZone, Utc};
 use crate::handlers::State;
 use crate::layers;
 
+use crate::models::error::{DreamError, ProximaError};
 use xml::writer::{EmitterConfig, XmlEvent};
 
 pub async fn sitemap_handler<'a>(
     Extension(state): Extension<Arc<State>>,
-) -> Result<Html<String>, (StatusCode, String)> {
-    let conn = state.pool.get().await.map_err(layers::internal_error)?;
+) -> Result<Html<String>, ProximaError> {
+    let conn = state
+        .pool
+        .get()
+        .await
+        .map_err(|err| DreamError::Unknown(err))?;
 
     let query_result = conn
         .query(
@@ -23,7 +28,7 @@ order by update_time desc;",
             &[],
         )
         .await
-        .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?;
+        .map_err(|err| DreamError::Unknown(err))?;
 
     let mut output = Cursor::new(Vec::new());
     let mut writer = EmitterConfig::new()
@@ -34,7 +39,7 @@ order by update_time desc;",
             XmlEvent::start_element("urlset")
                 .attr("xmlns", "http://www.sitemaps.org/schemas/sitemap/0.9"),
         )
-        .map_err(layers::internal_error)?;
+        .map_err(|err| DreamError::Unknown(err))?;
     for row in query_result {
         let pk: &str = row.get("pk");
         let update_time: chrono::NaiveDateTime = row.get("update_time");
@@ -42,42 +47,42 @@ order by update_time desc;",
         let lastmod: String = update_time_utc.to_rfc3339();
         writer
             .write(XmlEvent::start_element("url"))
-            .map_err(layers::internal_error)?;
+            .map_err(|err| DreamError::Unknown(err))?;
 
         writer
             .write(XmlEvent::start_element("loc"))
-            .map_err(layers::internal_error)?;
+            .map_err(|err| DreamError::Unknown(err))?;
         writer
             .write(XmlEvent::characters(
                 format!("https://sfx.xyz/article/read/{}", pk).as_str(),
             ))
-            .map_err(layers::internal_error)?;
+            .map_err(|err| DreamError::Unknown(err))?;
         writer
             .write(XmlEvent::end_element())
-            .map_err(layers::internal_error)?;
+            .map_err(|err| DreamError::Unknown(err))?;
 
         writer
             .write(XmlEvent::start_element("lastmod"))
-            .map_err(layers::internal_error)?;
+            .map_err(|err| DreamError::Unknown(err))?;
         writer
             .write(XmlEvent::characters(lastmod.as_str()))
-            .map_err(layers::internal_error)?;
+            .map_err(|err| DreamError::Unknown(err))?;
         writer
             .write(XmlEvent::end_element())
-            .map_err(layers::internal_error)?;
+            .map_err(|err| DreamError::Unknown(err))?;
 
         writer
             .write(XmlEvent::end_element())
-            .map_err(layers::internal_error)?;
+            .map_err(|err| DreamError::Unknown(err))?;
     }
     writer
         .write(XmlEvent::end_element())
-        .map_err(layers::internal_error)?;
+        .map_err(|err| DreamError::Unknown(err))?;
     output.seek(SeekFrom::Start(0)).unwrap();
     let mut result = String::new();
     output
         .read_to_string(&mut result)
-        .map_err(layers::internal_error)?;
+        .map_err(|err| DreamError::Unknown(err))?;
 
     Ok(Html(result))
 }

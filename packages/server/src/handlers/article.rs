@@ -16,7 +16,7 @@ use serde::de::DeserializeOwned;
 
 use crate::handlers::State;
 use crate::models::claims::Claims;
-use crate::models::error::AuthError;
+use crate::models::error::{DreamError, ProximaError, SomeError};
 use crate::models::jwt::Protected;
 use crate::utils::article::{build_body, TocItem};
 use crate::{layers, utils};
@@ -24,13 +24,15 @@ use crate::{layers, utils};
 pub async fn article_read_handler(
     Path(params): Path<HashMap<String, String>>,
     Extension(state): Extension<Arc<State>>,
-) -> Result<Html<String>, (StatusCode, String)> {
-    let pk = params
-        .get("pk")
-        .ok_or_else(|| (StatusCode::BAD_REQUEST, "pk参数有误".to_string()))?;
+) -> Result<Html<String>, ProximaError> {
+    let pk = params.get("pk").ok_or_else(|| SomeError::InvalidData)?;
     tracing::debug!("pk:{}", pk,);
 
-    let conn = state.pool.get().await.map_err(layers::internal_error)?;
+    let conn = state
+        .pool
+        .get()
+        .await
+        .map_err(|err| DreamError::BB8Postgres(err))?;
 
     let query_result = conn
         .query(
@@ -46,10 +48,10 @@ where articles.pk = $1;",
             &[&pk],
         )
         .await
-        .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?;
+        .map_err(|err| SomeError::Postgresql(err))?;
 
     if query_result.len() < 1 {
-        return Err((StatusCode::NOT_FOUND, "文章未找到".to_string()));
+        return Err(ProximaError::from(SomeError::NotFound));
     }
 
     let title: &str = query_result[0].get("title");
@@ -70,13 +72,8 @@ where articles.pk = $1;",
         title: title.to_string(),
         header: 0,
     });
-    let body_html = build_body(&mut toc_list, &body).or_else(|err| {
-        tracing::error!("解析body出错: {}", err);
-        Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "文章解析出错".to_string(),
-        ))
-    })?;
+    let body_html =
+        build_body(&mut toc_list, &body).or_else(|err| Err(DreamError::Unknown(err)))?;
 
     let page_data = &json!({
         "pk": pk.to_string(),
@@ -101,7 +98,7 @@ where articles.pk = $1;",
     let result = state
         .registry
         .render("article_read", page_data)
-        .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))?;
+        .map_err(|err| SomeError::Handlebars(err))?;
 
     Ok(Html(result))
 }
