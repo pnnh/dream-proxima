@@ -7,7 +7,7 @@ use serde_json::json;
 
 use crate::handlers::State;
 use crate::models::error::{AppError, OtherError};
-use crate::views::rest::error::HttpRESTError;
+use crate::views::restful::error::HttpRESTError;
 use crate::{layers, utils};
 
 pub async fn user_info_handler<'a>(

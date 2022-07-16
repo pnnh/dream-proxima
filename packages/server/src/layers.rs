@@ -12,7 +12,7 @@ pub type ConnectionPool = Pool<PostgresConnectionManager<NoTls>>;
 struct DatabaseConnection(PooledConnection<'static, PostgresConnectionManager<NoTls>>);
 
 use crate::models::error::{AppError, OtherError};
-use crate::views::rest::error::HttpRESTError;
+use crate::views::restful::error::HttpRESTError;
 use std::{error::Error, fmt};
 
 #[async_trait]

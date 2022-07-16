@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::handlers::State;
 use crate::models::claims::{Claims, Keys};
 use crate::models::error::{AppError, OtherError};
-use crate::views::rest::error::HttpRESTError;
+use crate::views::restful::error::HttpRESTError;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, Default)]
 pub struct Protected {

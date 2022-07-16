@@ -18,11 +18,11 @@ use crate::config::{is_debug, ProximaConfig};
 use crate::handlers::jwt::{login_handler, register_handler};
 use crate::models::claims::Claims;
 use crate::views::graphql::schema::{graphql_mutation_handler, graphql_mutation_playground};
+use crate::views::{html, restful};
 use crate::{config, helpers, layers};
 
 mod about;
 mod article;
-mod index;
 mod jwt;
 mod sitemap;
 mod user;
@@ -66,7 +66,7 @@ pub async fn app() -> Router {
     let middleware = ServiceBuilder::new().add_extension(state.clone());
 
     Router::new()
-        .route("/", get(index::index_handler))
+        .route("/", get(html::index::index_handler))
         .route("/about", get(about::about_handler))
         .route("/article/read/:pk", get(article::article_read_handler))
         .route(
@@ -81,6 +81,7 @@ pub async fn app() -> Router {
         .route("/seo/sitemap", get(sitemap::sitemap_handler))
         .route("/account/login", post(login_handler))
         .route("/account/register", get(register_handler))
+        .route("/restful/index/query", get(restful::index::query))
         .layer(cors)
         .layer(middleware.into_inner())
 }

@@ -1,3 +1,3 @@
 pub(crate) mod graphql;
 pub(crate) mod html;
-pub(crate) mod rest;
+pub(crate) mod restful;

@@ -1,6 +1,6 @@
 use crate::handlers::State;
 use crate::models::error::OtherError;
-use crate::views::rest::error::HttpRESTError;
+use crate::views::restful::error::HttpRESTError;
 use axum::response::Html;
 use axum::{extract::Extension, http::StatusCode};
 use serde_json::json;

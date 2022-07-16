@@ -26,7 +26,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use crate::handlers::State;
 use crate::models::claims::{AuthBody, AuthPayload, Claims, Keys};
 use crate::models::error::{AppError, OtherError};
-use crate::views::rest::error::HttpRESTError;
+use crate::views::restful::error::HttpRESTError;
 
 #[derive(Deserialize)]
 pub struct RegisterQuery {

@@ -19,7 +19,7 @@ use crate::models::claims::Claims;
 use crate::models::error::{AppError, OtherError};
 use crate::models::jwt::Protected;
 use crate::utils::article::{build_body, TocItem};
-use crate::views::rest::error::HttpRESTError;
+use crate::views::restful::error::HttpRESTError;
 use crate::{layers, utils};
 
 pub async fn article_read_handler(

@@ -11,7 +11,7 @@ use crate::handlers::State;
 use crate::models::error::{AppError, OtherError};
 use crate::models::index::IndexModel;
 use crate::service::index::IndexService;
-use crate::views::rest::error::HttpRESTError;
+use crate::views::restful::error::HttpRESTError;
 use crate::{helpers, layers};
 
 const INDEX_PAGE_SIZE: i32 = 10;
@@ -31,12 +31,6 @@ pub async fn index_handler<'a>(
         return Err(HttpRESTError::from(AppError::InvalidParameter));
     }
 
-    let conn = state
-        .pool
-        .get()
-        .await
-        .map_err(|err| OtherError::BB8Postgres(err))?;
-
     let row_count = 17;
     let mut max_page = row_count / INDEX_PAGE_SIZE;
     if row_count % INDEX_PAGE_SIZE != 0 {
@@ -51,7 +45,7 @@ pub async fn index_handler<'a>(
 
     let index_service = IndexService::new(state.clone());
 
-    let mut models: Vec<IndexModel> = Vec::new();
+    let models = index_service.query(offset, limit).await?;
 
     let pages_html = helpers::calc_page_html(max_page, current_page);
     let result = state

@@ -9,7 +9,7 @@ use crate::handlers::State;
 use crate::layers;
 
 use crate::models::error::OtherError;
-use crate::views::rest::error::HttpRESTError;
+use crate::views::restful::error::HttpRESTError;
 use xml::writer::{EmitterConfig, XmlEvent};
 
 pub async fn sitemap_handler<'a>(

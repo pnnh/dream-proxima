@@ -20,7 +20,7 @@ impl IndexService {
             .pool
             .get()
             .await
-            .expect("graphql articles获取pool出错");
+            .map_err(|err| OtherError::BB8Postgres(err))?;
 
         let query_result = conn
             .query(
@@ -40,26 +40,26 @@ order by update_time desc offset $1 limit $2;",
         let mut models: Vec<IndexModel> = Vec::new();
 
         for row in query_result {
-            let pk: &str = row.get(0);
+            let pk: &str = row.get("pk");
             let title: &str = row.get("title");
-            let body: serde_json::Value = row.get(2);
-            let description: &str = row.get("description");
-            let update_time: chrono::NaiveDateTime = row.get(4);
-            let creator: String = row.get(5);
-            let keywords: String = row.get(6);
-            let creator_nickname: &str = row.get(7);
-            let views: Option<i64> = row.get(8);
+            let body: serde_json::Value = row.get("body");
+            let description: Option<&str> = row.get("description");
+            let update_time: chrono::NaiveDateTime = row.get("update_time");
+            let creator: String = row.get("creator");
+            let keywords: Option<&str> = row.get("keywords");
+            let creator_nickname: Option<&str> = row.get("nickname");
+            let views: Option<i64> = row.get("views");
 
             let model = IndexModel {
                 pk: pk.to_string(),
                 title: title.to_string(),
                 body,
-                description: description.to_string(),
+                description: description.unwrap_or("").to_string(),
                 update_time_formatted: update_time.format("%Y年%m月%d日 %H:%M").to_string(),
                 creator: creator.to_string(),
-                creator_nickname: creator_nickname.to_string(),
+                creator_nickname: creator_nickname.unwrap_or("").to_string(),
                 views: views.unwrap_or(0),
-                keywords,
+                keywords: keywords.unwrap_or("").to_string(),
             };
             models.push(model);
         }
