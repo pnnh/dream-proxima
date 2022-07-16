@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use crate::graphql::types::Article;
 use crate::handlers::State;
+use crate::service::article::ArticleService;
 
 #[derive(Default)]
 pub struct ArticleQuery;
@@ -19,35 +20,16 @@ impl ArticleQuery {
             limit as i64
         };
 
-        let conn = state
-            .pool
-            .get()
-            .await
-            .expect("graphql articles获取pool出错");
+        let article_service = ArticleService::new(state.clone());
 
-        let query_result = conn
-            .query(
-                "select articles.pk, articles.title, articles.body, 
-articles.description, articles.update_time, articles.creator, articles.keywords,
-accounts.nickname, articles_views.views
-from articles
-    left join accounts on articles.creator = accounts.pk
-	left join articles_views on articles.pk = articles_views.pk
-where articles.status = 1
-order by update_time desc offset $1 limit $2;",
-                &[&offset_value, &limit_value],
-            )
-            .await
-            .expect("graphql articles执行查询出错");
+        let articles = article_service
+            .query_articles(offset_value, limit_value)
+            .await?;
 
         let mut result: Vec<Article> = Vec::new();
 
-        for row in query_result {
-            let title: &str = row.get("title");
-
-            let model = Article {
-                title: title.to_string(),
-            };
+        for art in articles {
+            let model = Article { title: art.title };
             result.push(model);
         }
 
@@ -56,19 +38,10 @@ order by update_time desc offset $1 limit $2;",
 
     async fn articles_count(&self, ctx: &Context<'_>) -> Result<i32> {
         let state = ctx.data::<Arc<State>>().unwrap();
+        let article_service = ArticleService::new(state.clone());
 
-        let conn = state.pool.get().await.expect("graphql count获取pool出错");
+        let count = article_service.query_count().await?;
 
-        let query_result = conn
-            .query("select count(*) from articles where status = 1;", &[])
-            .await
-            .expect("graphql count执行查询出错");
-
-        for row in query_result {
-            let count: i64 = row.get(0);
-            return Ok(count as i32);
-        }
-
-        Err(async_graphql::Error::new("分页错误"))
+        Ok(count as i32)
     }
 }

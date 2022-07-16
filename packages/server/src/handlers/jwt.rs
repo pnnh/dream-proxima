@@ -38,7 +38,7 @@ pub struct RegisterQuery {
 }
 pub async fn register_handler(
     Query(args): Query<RegisterQuery>,
-    Extension(state): Extension<Arc<State<'_>>>,
+    Extension(state): Extension<Arc<State>>,
 ) -> Result<Html<String>, AuthError> {
     // 仅在开发环境下可以访问
     if !is_debug() {
@@ -79,7 +79,7 @@ pub async fn register_handler(
 
 pub async fn login_handler(
     Json(payload): Json<AuthPayload>,
-    Extension(state): Extension<Arc<State<'_>>>,
+    Extension(state): Extension<Arc<State>>,
 ) -> Result<Json<AuthBody>, AuthError> {
     // Check if the user sent the credentials
     if payload.account.is_empty() {

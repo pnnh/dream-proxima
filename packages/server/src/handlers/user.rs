@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 pub async fn user_info_handler<'a>(
     Path(params): Path<HashMap<String, String>>,
-    Extension(state): Extension<Arc<State<'_>>>,
+    Extension(state): Extension<Arc<State>>,
 ) -> Result<Html<String>, (StatusCode, String)> {
     let pk = params
         .get("pk")

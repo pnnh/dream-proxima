@@ -19,7 +19,7 @@ pub struct IndexQuery {
 
 pub async fn index_handler<'a>(
     Query(args): Query<IndexQuery>,
-    Extension(state): Extension<Arc<State<'_>>>,
+    Extension(state): Extension<Arc<State>>,
 ) -> Result<Html<String>, (StatusCode, String)> {
     let mut current_page = args.p.unwrap_or(1);
     tracing::debug!("current_page:{}", current_page,);

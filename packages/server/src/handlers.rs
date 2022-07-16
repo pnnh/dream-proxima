@@ -30,8 +30,8 @@ mod sitemap;
 mod user;
 
 #[derive(Clone, Debug)]
-pub struct State<'reg> {
-    pub registry: Handlebars<'reg>,
+pub struct State {
+    pub registry: Handlebars<'static>,
     pub pool: layers::ConnectionPool,
     pub config: ProximaConfig,
 }

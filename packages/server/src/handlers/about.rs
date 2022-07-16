@@ -5,7 +5,7 @@ use serde_json::json;
 use std::sync::Arc;
 
 pub async fn about_handler(
-    Extension(state): Extension<Arc<State<'_>>>,
+    Extension(state): Extension<Arc<State>>,
 ) -> Result<Html<String>, (StatusCode, String)> {
     let result = state
         .registry

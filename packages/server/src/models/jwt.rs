@@ -32,7 +32,7 @@ where
                 .await
                 .map_err(|_| AuthError::InvalidToken)?;
         // Decode the user data
-        type Extractors = (Extension<Arc<State<'static>>>);
+        type Extractors = (Extension<Arc<State>>);
 
         let (Extension(state)) = Extractors::from_request(req)
             .await

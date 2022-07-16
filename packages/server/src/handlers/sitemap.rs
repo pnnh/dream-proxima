@@ -11,7 +11,7 @@ use crate::layers;
 use xml::writer::{EmitterConfig, XmlEvent};
 
 pub async fn sitemap_handler<'a>(
-    Extension(state): Extension<Arc<State<'_>>>,
+    Extension(state): Extension<Arc<State>>,
 ) -> Result<Html<String>, (StatusCode, String)> {
     let conn = state.pool.get().await.map_err(layers::internal_error)?;
 

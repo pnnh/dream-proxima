@@ -11,7 +11,7 @@ use crate::models::claims::Claims;
 
 pub async fn graphql_mutation_handler<'a>(
     claims: Option<Claims>,
-    Extension(state): Extension<Arc<State<'static>>>,
+    Extension(state): Extension<Arc<State>>,
     req: GraphQLRequest,
 ) -> GraphQLResponse {
     let schema = Schema::build(

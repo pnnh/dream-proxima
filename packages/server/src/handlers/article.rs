@@ -23,7 +23,7 @@ use crate::{layers, utils};
 
 pub async fn article_read_handler(
     Path(params): Path<HashMap<String, String>>,
-    Extension(state): Extension<Arc<State<'_>>>,
+    Extension(state): Extension<Arc<State>>,
 ) -> Result<Html<String>, (StatusCode, String)> {
     let pk = params
         .get("pk")
