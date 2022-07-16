@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::handlers::State;
 use crate::models::article::ArticleModel;
-use crate::models::error::{AppError, HttpError, OtherError};
+use crate::models::error::{AppError, OtherError};
 use crate::models::index::IndexModel;
 
 pub struct IndexService {
@@ -14,7 +14,7 @@ impl IndexService {
         IndexService { state }
     }
 
-    pub async fn query(&self, offset: i64, limit: i64) -> Result<Vec<IndexModel>, HttpError> {
+    pub async fn query(&self, offset: i64, limit: i64) -> Result<Vec<IndexModel>, AppError> {
         let conn = self
             .state
             .pool

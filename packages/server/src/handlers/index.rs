@@ -8,9 +8,10 @@ use axum::{extract::Extension, http::StatusCode};
 use serde_json::json;
 
 use crate::handlers::State;
-use crate::models::error::{AppError, HttpError, OtherError};
+use crate::models::error::{AppError, OtherError};
 use crate::models::index::IndexModel;
 use crate::service::index::IndexService;
+use crate::views::rest::error::HttpRESTError;
 use crate::{helpers, layers};
 
 const INDEX_PAGE_SIZE: i32 = 10;
@@ -23,11 +24,11 @@ pub struct IndexQuery {
 pub async fn index_handler<'a>(
     Query(args): Query<IndexQuery>,
     Extension(state): Extension<Arc<State>>,
-) -> Result<Html<String>, HttpError> {
+) -> Result<Html<String>, HttpRESTError> {
     let mut current_page = args.p.unwrap_or(1);
     tracing::debug!("current_page:{}", current_page,);
     if current_page < 1 {
-        return Err(HttpError::from(AppError::InvalidParameter));
+        return Err(HttpRESTError::from(AppError::InvalidParameter));
     }
 
     let conn = state

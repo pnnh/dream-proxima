@@ -8,12 +8,13 @@ use chrono::{TimeZone, Utc};
 use crate::handlers::State;
 use crate::layers;
 
-use crate::models::error::{HttpError, OtherError};
+use crate::models::error::OtherError;
+use crate::views::rest::error::HttpRESTError;
 use xml::writer::{EmitterConfig, XmlEvent};
 
 pub async fn sitemap_handler<'a>(
     Extension(state): Extension<Arc<State>>,
-) -> Result<Html<String>, HttpError> {
+) -> Result<Html<String>, HttpRESTError> {
     let conn = state
         .pool
         .get()

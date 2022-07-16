@@ -1,6 +1,5 @@
-use crate::handlers::State;
-use crate::models::claims::{Claims, Keys};
-use crate::models::error::{HttpError, OtherError};
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use axum::extract::{FromRequest, RequestParts};
 use axum::headers::authorization::Bearer;
@@ -9,7 +8,11 @@ use axum::http::header;
 use axum::{Extension, TypedHeader};
 use jsonwebtoken::{decode, Validation};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+
+use crate::handlers::State;
+use crate::models::claims::{Claims, Keys};
+use crate::models::error::{AppError, OtherError};
+use crate::views::rest::error::HttpRESTError;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, Default)]
 pub struct Protected {
@@ -23,7 +26,7 @@ impl<B> FromRequest<B> for Protected
 where
     B: Send,
 {
-    type Rejection = HttpError;
+    type Rejection = HttpRESTError;
 
     async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
         // Extract the token from the authorization header

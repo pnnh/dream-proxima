@@ -7,56 +7,6 @@ use serde_json::json;
 use std::error;
 use std::fmt::{Debug, Display, Formatter};
 
-#[derive(Debug)]
-pub struct HttpError {
-    pub status: StatusCode,
-    pub message: String,
-}
-
-impl HttpError {
-    pub fn new(message: &str) -> HttpError {
-        HttpError {
-            status: StatusCode::INTERNAL_SERVER_ERROR,
-            message: message.to_string(),
-        }
-    }
-    pub fn from_string(message: String) -> HttpError {
-        HttpError {
-            status: StatusCode::INTERNAL_SERVER_ERROR,
-            message,
-        }
-    }
-}
-
-impl Display for HttpError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "proxima error: {}", self.message)
-    }
-}
-
-impl<T> From<OtherError<T>> for HttpError {
-    fn from(error: OtherError<T>) -> Self {
-        HttpError::new(error.to_string().as_str())
-    }
-}
-
-impl From<AppError> for HttpError {
-    fn from(error: AppError) -> Self {
-        match error {
-            WrongCredentials => HttpError::new("授权有误"),
-        }
-    }
-}
-
-impl IntoResponse for HttpError {
-    fn into_response(self) -> Response {
-        let body = Json(json!({
-            "error": self.message,
-        }));
-        (self.status, body).into_response()
-    }
-}
-
 pub enum AppError {
     WrongCredentials,
     MissingCredentials,
@@ -66,9 +16,11 @@ pub enum AppError {
     InvalidParameter,
     NotFound,
     EmptyData,
+    InvalidConfig(&'static str),
     Graphql(async_graphql::Error),
     Postgresql(tokio_postgres::Error),
     Handlebars(handlebars::RenderError),
+    Unknown,
 }
 
 impl Display for AppError {
@@ -82,6 +34,12 @@ impl Debug for AppError {
         match self {
             WrongCredentials => write!(f, "授权错误2"),
         }
+    }
+}
+
+impl<T> From<OtherError<T>> for AppError {
+    fn from(error: OtherError<T>) -> Self {
+        AppError::Unknown
     }
 }
 

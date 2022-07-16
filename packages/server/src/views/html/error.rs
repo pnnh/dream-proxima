@@ -9,48 +9,49 @@ use std::error;
 use std::fmt::{Debug, Display, Formatter};
 
 #[derive(Debug)]
-pub struct HttpRESTError {
+pub struct HttpHTMLError {
     pub status: StatusCode,
     pub message: String,
 }
 
-impl HttpRESTError {
-    pub fn new(message: &str) -> HttpRESTError {
-        HttpRESTError {
+impl HttpHTMLError {
+    pub fn new(message: &str) -> HttpHTMLError {
+        HttpHTMLError {
             status: StatusCode::INTERNAL_SERVER_ERROR,
             message: message.to_string(),
         }
     }
-    pub fn from_string(message: String) -> HttpRESTError {
-        HttpRESTError {
+    pub fn from_string(message: String) -> HttpHTMLError {
+        HttpHTMLError {
             status: StatusCode::INTERNAL_SERVER_ERROR,
             message,
         }
     }
 }
 
-impl Display for HttpRESTError {
+impl Display for HttpHTMLError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "proxima error: {}", self.message)
     }
 }
 
-impl<T> From<OtherError<T>> for HttpRESTError {
+impl<T> From<OtherError<T>> for HttpHTMLError {
     fn from(error: OtherError<T>) -> Self {
-        HttpRESTError::new(error.to_string().as_str())
+        HttpHTMLError::new(error.to_string().as_str())
     }
 }
 
-impl From<AppError> for HttpRESTError {
+impl From<AppError> for HttpHTMLError {
     fn from(error: AppError) -> Self {
         match error {
-            WrongCredentials => HttpRESTError::new("授权有误"),
+            WrongCredentials => HttpHTMLError::new("授权有误"),
         }
     }
 }
 
-impl IntoResponse for HttpRESTError {
+impl IntoResponse for HttpHTMLError {
     fn into_response(self) -> Response {
+        // todo 怎么能渲染友好的html内容提示呢？
         let body = Json(json!({
             "error": self.message,
         }));

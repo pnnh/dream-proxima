@@ -1,5 +1,6 @@
 use crate::handlers::State;
-use crate::models::error::{HttpError, OtherError};
+use crate::models::error::OtherError;
+use crate::views::rest::error::HttpRESTError;
 use axum::response::Html;
 use axum::{extract::Extension, http::StatusCode};
 use serde_json::json;
@@ -7,7 +8,7 @@ use std::sync::Arc;
 
 pub async fn about_handler(
     Extension(state): Extension<Arc<State>>,
-) -> Result<Html<String>, HttpError> {
+) -> Result<Html<String>, HttpRESTError> {
     let result = state
         .registry
         .render("about", &json!({}))

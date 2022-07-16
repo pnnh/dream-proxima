@@ -15,11 +15,9 @@ use tower_http::cors::{Any, CorsLayer};
 use tower_http::ServiceBuilderExt;
 
 use crate::config::{is_debug, ProximaConfig};
-use crate::graphql::mutation::MutationRoot;
-use crate::graphql::query::QueryRoot;
-use crate::graphql::schema::{graphql_mutation_handler, graphql_mutation_playground};
 use crate::handlers::jwt::{login_handler, register_handler};
 use crate::models::claims::Claims;
+use crate::views::graphql::schema::{graphql_mutation_handler, graphql_mutation_playground};
 use crate::{config, helpers, layers};
 
 mod about;
@@ -91,6 +89,8 @@ fn register_template_file<'reg>(reg: &mut Handlebars) {
     reg.register_template_file("index", "assets/templates/pages/index.hbs")
         .unwrap();
     reg.register_template_file("about", "assets/templates/pages/about.hbs")
+        .unwrap();
+    reg.register_template_file("error", "assets/templates/pages/error.hbs")
         .unwrap();
     reg.register_template_file("styles", "assets/templates/partial/styles.hbs")
         .unwrap();

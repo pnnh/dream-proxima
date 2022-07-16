@@ -1,9 +1,9 @@
 use async_graphql::{Context, Object, Result};
 use std::sync::Arc;
 
-use crate::graphql::types::Article;
 use crate::handlers::State;
 use crate::service::article::ArticleService;
+use crate::views::graphql::types::Article;
 
 #[derive(Default)]
 pub struct ArticleQuery;

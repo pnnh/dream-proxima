@@ -11,7 +11,8 @@ pub type ConnectionPool = Pool<PostgresConnectionManager<NoTls>>;
 
 struct DatabaseConnection(PooledConnection<'static, PostgresConnectionManager<NoTls>>);
 
-use crate::models::error::{HttpError, OtherError};
+use crate::models::error::{AppError, OtherError};
+use crate::views::rest::error::HttpRESTError;
 use std::{error::Error, fmt};
 
 #[async_trait]
@@ -19,7 +20,7 @@ impl<B> FromRequest<B> for DatabaseConnection
 where
     B: Send,
 {
-    type Rejection = HttpError;
+    type Rejection = HttpRESTError;
 
     async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
         let Extension(pool) = Extension::<ConnectionPool>::from_request(req)

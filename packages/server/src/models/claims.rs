@@ -10,7 +10,8 @@ use jsonwebtoken::{decode, DecodingKey, EncodingKey, Validation};
 use serde::{Deserialize, Serialize};
 
 use crate::handlers::State;
-use crate::models::error::{HttpError, OtherError};
+use crate::models::error::{AppError, OtherError};
+use crate::views::rest::error::HttpRESTError;
 
 pub struct Keys {
     pub(crate) encoding: EncodingKey,
@@ -60,7 +61,7 @@ impl<B> FromRequest<B> for Claims
 where
     B: Send,
 {
-    type Rejection = HttpError;
+    type Rejection = HttpRESTError;
 
     async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
         // Extract the token from the authorization header

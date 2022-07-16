@@ -5,9 +5,10 @@ use axum::response::{Html, IntoResponse};
 use axum::Extension;
 use std::sync::Arc;
 
-use crate::graphql::{mutation::MutationRoot, query::QueryRoot};
 use crate::handlers::State;
 use crate::models::claims::Claims;
+use crate::views::graphql::mutation::MutationRoot;
+use crate::views::graphql::query::QueryRoot;
 
 pub async fn graphql_mutation_handler<'a>(
     claims: Option<Claims>,

@@ -1,7 +1,7 @@
-use crate::graphql::types::Article;
 use crate::handlers::State;
 use crate::models::claims::Claims;
-use crate::models::error::{AppError, HttpError, OtherError};
+use crate::models::error::{AppError, OtherError};
+use crate::views::graphql::types::Article;
 use async_graphql::{Context, InputObject, Object, Result};
 use chrono::Utc;
 use nanoid::nanoid;

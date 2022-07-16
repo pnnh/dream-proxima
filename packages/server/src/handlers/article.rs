@@ -16,15 +16,16 @@ use serde::de::DeserializeOwned;
 
 use crate::handlers::State;
 use crate::models::claims::Claims;
-use crate::models::error::{AppError, HttpError, OtherError};
+use crate::models::error::{AppError, OtherError};
 use crate::models::jwt::Protected;
 use crate::utils::article::{build_body, TocItem};
+use crate::views::rest::error::HttpRESTError;
 use crate::{layers, utils};
 
 pub async fn article_read_handler(
     Path(params): Path<HashMap<String, String>>,
     Extension(state): Extension<Arc<State>>,
-) -> Result<Html<String>, HttpError> {
+) -> Result<Html<String>, HttpRESTError> {
     let pk = params.get("pk").ok_or_else(|| AppError::InvalidData)?;
     tracing::debug!("pk:{}", pk,);
 
@@ -51,7 +52,7 @@ where articles.pk = $1;",
         .map_err(|err| AppError::Postgresql(err))?;
 
     if query_result.len() < 1 {
-        return Err(HttpError::from(AppError::NotFound));
+        return Err(HttpRESTError::from(AppError::NotFound));
     }
 
     let title: &str = query_result[0].get("title");

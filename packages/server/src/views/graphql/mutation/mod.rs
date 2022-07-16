@@ -1,4 +1,4 @@
-pub mod article;
+pub(crate) mod article;
 
 pub use article::ArticleMutation;
 

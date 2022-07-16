@@ -25,7 +25,8 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::handlers::State;
 use crate::models::claims::{AuthBody, AuthPayload, Claims, Keys};
-use crate::models::error::{AppError, HttpError, OtherError};
+use crate::models::error::{AppError, OtherError};
+use crate::views::rest::error::HttpRESTError;
 
 #[derive(Deserialize)]
 pub struct RegisterQuery {
@@ -34,14 +35,14 @@ pub struct RegisterQuery {
 pub async fn register_handler(
     Query(args): Query<RegisterQuery>,
     Extension(state): Extension<Arc<State>>,
-) -> Result<Html<String>, HttpError> {
+) -> Result<Html<String>, HttpRESTError> {
     // 仅在开发环境下可以访问
     if !is_debug() {
-        return Err(HttpError::from(AppError::WrongCredentials));
+        return Err(HttpRESTError::from(AppError::WrongCredentials));
     }
     let mut account: String = args.account.unwrap_or("".to_string());
     if account.is_empty() {
-        return Err(HttpError::from(AppError::EmptyData));
+        return Err(HttpRESTError::from(AppError::EmptyData));
     }
     let secret = &state.config.totp_secret;
     let totp = TOTP::new(
@@ -75,10 +76,10 @@ pub async fn register_handler(
 pub async fn login_handler(
     Json(payload): Json<AuthPayload>,
     Extension(state): Extension<Arc<State>>,
-) -> Result<Json<AuthBody>, HttpError> {
+) -> Result<Json<AuthBody>, HttpRESTError> {
     // Check if the user sent the credentials
     if payload.account.is_empty() {
-        return Err(HttpError::from(AppError::MissingCredentials));
+        return Err(HttpRESTError::from(AppError::MissingCredentials));
     }
     let secret = &state.config.totp_secret;
     let totp = TOTP::new(
@@ -96,7 +97,7 @@ pub async fn login_handler(
         .check_current(payload.code.as_str())
         .map_err(|err| OtherError::Unknown(err))?;
     if !ok {
-        return Err(HttpError::from(AppError::WrongCredentials));
+        return Err(HttpRESTError::from(AppError::WrongCredentials));
     }
 
     let conn = state
@@ -112,7 +113,7 @@ pub async fn login_handler(
         .map_err(|err| OtherError::Unknown(err))?;
 
     if query_result.len() < 1 {
-        return Err(HttpError::from(AppError::WrongCredentials));
+        return Err(HttpRESTError::from(AppError::WrongCredentials));
     }
 
     let pk: String = query_result[0].get("pk");

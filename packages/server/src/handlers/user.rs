@@ -1,17 +1,19 @@
+use std::collections::HashMap;
+use std::sync::Arc;
+
 use axum::response::Html;
 use axum::{extract::Extension, extract::Path, http::StatusCode};
 use serde_json::json;
 
 use crate::handlers::State;
-use crate::models::error::{AppError, HttpError, OtherError};
+use crate::models::error::{AppError, OtherError};
+use crate::views::rest::error::HttpRESTError;
 use crate::{layers, utils};
-use std::collections::HashMap;
-use std::sync::Arc;
 
 pub async fn user_info_handler<'a>(
     Path(params): Path<HashMap<String, String>>,
     Extension(state): Extension<Arc<State>>,
-) -> Result<Html<String>, HttpError> {
+) -> Result<Html<String>, HttpRESTError> {
     let pk = params.get("pk").ok_or_else(|| AppError::InvalidParameter)?;
     tracing::debug!("pk:{}", pk,);
 
@@ -33,7 +35,7 @@ where accounts.pk = $1;",
         .map_err(|err| OtherError::Unknown(err))?;
 
     if query_result.len() < 1 {
-        return Err(HttpError::new("用户未找到"));
+        return Err(HttpRESTError::new("用户未找到"));
     }
 
     let nickname: &str = query_result[0].get("nickname");
