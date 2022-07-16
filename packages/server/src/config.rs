@@ -1,4 +1,4 @@
-use crate::models::error::ProximaError;
+use crate::models::error::HttpError;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_appconfig::Client;
 use std::collections::HashMap;
@@ -14,7 +14,7 @@ pub struct ProximaConfig {
 }
 
 impl ProximaConfig {
-    pub async fn init() -> Result<ProximaConfig, ProximaError> {
+    pub async fn init() -> Result<ProximaConfig, HttpError> {
         let region_provider = RegionProviderChain::default_provider().or_else("ap-east-1");
         let config = aws_config::from_env().region(region_provider).load().await;
 
@@ -34,19 +34,19 @@ impl ProximaConfig {
         let response = request
             .send()
             .await
-            .map_err(|err| ProximaError::from_string(err.to_string()))?;
+            .map_err(|err| HttpError::from_string(err.to_string()))?;
 
         if let Some(blob) = response.content() {
             let data = blob.clone().into_inner();
-            let content = String::from_utf8(data)
-                .map_err(|err| ProximaError::from_string(err.to_string()))?;
+            let content =
+                String::from_utf8(data).map_err(|err| HttpError::from_string(err.to_string()))?;
 
             return ProximaConfig::parse_config(&content);
         }
-        Err(ProximaError::new("出错"))
+        Err(HttpError::new("出错"))
     }
 
-    pub fn parse_config(configuration: &String) -> Result<ProximaConfig, ProximaError> {
+    pub fn parse_config(configuration: &String) -> Result<ProximaConfig, HttpError> {
         let split = configuration.split("\n");
         let mut config_map: HashMap<String, String> = HashMap::new();
 
@@ -70,13 +70,13 @@ impl ProximaConfig {
             }
         }
         if config.dsn.is_empty() {
-            return Err(ProximaError::new("未配置DSN"));
+            return Err(HttpError::new("未配置DSN"));
         }
         if config.totp_secret.is_empty() {
-            return Err(ProximaError::new("未配置TOTP_SECRET"));
+            return Err(HttpError::new("未配置TOTP_SECRET"));
         }
         if config.jwt_secret.is_empty() {
-            return Err(ProximaError::new("未配置JWT_SECRET"));
+            return Err(HttpError::new("未配置JWT_SECRET"));
         }
         Ok(config)
     }

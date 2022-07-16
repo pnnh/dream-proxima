@@ -3,7 +3,7 @@ use axum::{extract::Extension, extract::Path, http::StatusCode};
 use serde_json::json;
 
 use crate::handlers::State;
-use crate::models::error::{DreamError, ProximaError, SomeError};
+use crate::models::error::{AppError, HttpError, OtherError};
 use crate::{layers, utils};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -11,17 +11,15 @@ use std::sync::Arc;
 pub async fn user_info_handler<'a>(
     Path(params): Path<HashMap<String, String>>,
     Extension(state): Extension<Arc<State>>,
-) -> Result<Html<String>, ProximaError> {
-    let pk = params
-        .get("pk")
-        .ok_or_else(|| SomeError::InvalidParameter)?;
+) -> Result<Html<String>, HttpError> {
+    let pk = params.get("pk").ok_or_else(|| AppError::InvalidParameter)?;
     tracing::debug!("pk:{}", pk,);
 
     let conn = state
         .pool
         .get()
         .await
-        .map_err(|err| DreamError::Unknown(err))?;
+        .map_err(|err| OtherError::Unknown(err))?;
 
     let query_result = conn
         .query(
@@ -32,10 +30,10 @@ where accounts.pk = $1;",
             &[&pk],
         )
         .await
-        .map_err(|err| DreamError::Unknown(err))?;
+        .map_err(|err| OtherError::Unknown(err))?;
 
     if query_result.len() < 1 {
-        return Err(ProximaError::new("用户未找到"));
+        return Err(HttpError::new("用户未找到"));
     }
 
     let nickname: &str = query_result[0].get("nickname");
@@ -59,7 +57,7 @@ where accounts.pk = $1;",
     let result = state
         .registry
         .render("user_info", page_data)
-        .map_err(|err| DreamError::Unknown(err))?;
+        .map_err(|err| OtherError::Unknown(err))?;
 
     Ok(Html(result))
 }

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::handlers::State;
 use crate::models::article::ArticleModel;
-use crate::models::error::{DreamError, ProximaError, SomeError};
+use crate::models::error::{AppError, HttpError, OtherError};
 use crate::models::index::IndexModel;
 
 pub struct IndexService {
@@ -14,7 +14,7 @@ impl IndexService {
         IndexService { state }
     }
 
-    pub async fn query(&self, offset: i64, limit: i64) -> Result<Vec<IndexModel>, ProximaError> {
+    pub async fn query(&self, offset: i64, limit: i64) -> Result<Vec<IndexModel>, HttpError> {
         let conn = self
             .state
             .pool
@@ -35,7 +35,7 @@ order by update_time desc offset $1 limit $2;",
                 &[&offset, &limit],
             )
             .await
-            .map_err(|err| SomeError::Postgresql(err))?;
+            .map_err(|err| AppError::Postgresql(err))?;
 
         let mut models: Vec<IndexModel> = Vec::new();
 

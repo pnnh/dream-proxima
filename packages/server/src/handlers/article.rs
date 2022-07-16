@@ -16,7 +16,7 @@ use serde::de::DeserializeOwned;
 
 use crate::handlers::State;
 use crate::models::claims::Claims;
-use crate::models::error::{DreamError, ProximaError, SomeError};
+use crate::models::error::{AppError, HttpError, OtherError};
 use crate::models::jwt::Protected;
 use crate::utils::article::{build_body, TocItem};
 use crate::{layers, utils};
@@ -24,15 +24,15 @@ use crate::{layers, utils};
 pub async fn article_read_handler(
     Path(params): Path<HashMap<String, String>>,
     Extension(state): Extension<Arc<State>>,
-) -> Result<Html<String>, ProximaError> {
-    let pk = params.get("pk").ok_or_else(|| SomeError::InvalidData)?;
+) -> Result<Html<String>, HttpError> {
+    let pk = params.get("pk").ok_or_else(|| AppError::InvalidData)?;
     tracing::debug!("pk:{}", pk,);
 
     let conn = state
         .pool
         .get()
         .await
-        .map_err(|err| DreamError::BB8Postgres(err))?;
+        .map_err(|err| OtherError::BB8Postgres(err))?;
 
     let query_result = conn
         .query(
@@ -48,10 +48,10 @@ where articles.pk = $1;",
             &[&pk],
         )
         .await
-        .map_err(|err| SomeError::Postgresql(err))?;
+        .map_err(|err| AppError::Postgresql(err))?;
 
     if query_result.len() < 1 {
-        return Err(ProximaError::from(SomeError::NotFound));
+        return Err(HttpError::from(AppError::NotFound));
     }
 
     let title: &str = query_result[0].get("title");
@@ -73,7 +73,7 @@ where articles.pk = $1;",
         header: 0,
     });
     let body_html =
-        build_body(&mut toc_list, &body).or_else(|err| Err(DreamError::Unknown(err)))?;
+        build_body(&mut toc_list, &body).or_else(|err| Err(OtherError::Unknown(err)))?;
 
     let page_data = &json!({
         "pk": pk.to_string(),
@@ -98,7 +98,7 @@ where articles.pk = $1;",
     let result = state
         .registry
         .render("article_read", page_data)
-        .map_err(|err| SomeError::Handlebars(err))?;
+        .map_err(|err| AppError::Handlebars(err))?;
 
     Ok(Html(result))
 }

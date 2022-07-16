@@ -1,6 +1,6 @@
 use crate::handlers::State;
 use crate::models::article::ArticleModel;
-use crate::models::error::{ProximaError, SomeError};
+use crate::models::error::{AppError, HttpError};
 use std::sync::Arc;
 
 pub struct ArticleService {
@@ -16,7 +16,7 @@ impl ArticleService {
         &self,
         offset: i64,
         limit: i64,
-    ) -> Result<Vec<ArticleModel>, ProximaError> {
+    ) -> Result<Vec<ArticleModel>, HttpError> {
         let offset_value: i64 = if offset < 0 { 0 } else { offset as i64 };
         let limit_value: i64 = if limit < 4 || limit > 64 {
             8
@@ -62,7 +62,7 @@ order by update_time desc offset $1 limit $2;",
         Ok(result)
     }
 
-    pub async fn query_count(&self) -> Result<i64, ProximaError> {
+    pub async fn query_count(&self) -> Result<i64, HttpError> {
         let conn = self
             .state
             .pool
@@ -80,6 +80,6 @@ order by update_time desc offset $1 limit $2;",
             return Ok(count as i64);
         }
 
-        Err(ProximaError::from(SomeError::EmptyData))
+        Err(HttpError::from(AppError::EmptyData))
     }
 }

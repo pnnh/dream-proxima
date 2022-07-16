@@ -1,48 +1,54 @@
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
+use chrono::format::format;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::error;
 use std::fmt::{Debug, Display, Formatter};
 
 #[derive(Debug)]
-pub struct ProximaError {
+pub struct HttpError {
     pub status: StatusCode,
     pub message: String,
 }
 
-impl ProximaError {
-    pub fn new(message: &str) -> ProximaError {
-        ProximaError {
+impl HttpError {
+    pub fn new(message: &str) -> HttpError {
+        HttpError {
             status: StatusCode::INTERNAL_SERVER_ERROR,
             message: message.to_string(),
         }
     }
-    pub fn from_string(message: String) -> ProximaError {
-        ProximaError {
+    pub fn from_string(message: String) -> HttpError {
+        HttpError {
             status: StatusCode::INTERNAL_SERVER_ERROR,
             message,
         }
     }
 }
 
-impl Display for ProximaError {
+impl Display for HttpError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "proxima error: {}", self.message)
     }
 }
 
-impl<T> From<DreamError<T>> for ProximaError
-// where
-//     T: error::Error,
-{
-    fn from(error: DreamError<T>) -> Self {
-        ProximaError::new(error.to_string().as_str())
+impl<T> From<OtherError<T>> for HttpError {
+    fn from(error: OtherError<T>) -> Self {
+        HttpError::new(error.to_string().as_str())
     }
 }
 
-impl IntoResponse for ProximaError {
+impl From<AppError> for HttpError {
+    fn from(error: AppError) -> Self {
+        match error {
+            WrongCredentials => HttpError::new("授权有误"),
+        }
+    }
+}
+
+impl IntoResponse for HttpError {
     fn into_response(self) -> Response {
         let body = Json(json!({
             "error": self.message,
@@ -51,24 +57,7 @@ impl IntoResponse for ProximaError {
     }
 }
 
-#[derive(Debug)]
-pub struct RuntimeError;
-
-impl Display for RuntimeError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        todo!()
-    }
-}
-
-impl std::error::Error for RuntimeError {}
-
-pub type SomeError = DreamError<RuntimeError>;
-pub type OtherError<T> = DreamError<T>;
-
-pub enum DreamError<T>
-// where
-//     T: error::Error,
-{
+pub enum AppError {
     WrongCredentials,
     MissingCredentials,
     TokenCreation,
@@ -78,31 +67,42 @@ pub enum DreamError<T>
     NotFound,
     EmptyData,
     Graphql(async_graphql::Error),
-    BB8Postgres(bb8::RunError<T>),
     Postgresql(tokio_postgres::Error),
     Handlebars(handlebars::RenderError),
-    Unknown(T),
 }
 
-impl<T> Display for DreamError<T>
-// where
-//     T: error::Error,
-{
+impl Display for AppError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self)
     }
 }
 
-impl<T> Debug for DreamError<T>
-// where
-//     T: error::Error,
-{
+impl Debug for AppError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            WrongCredentials => write!(f, "授权错误2"),
+        }
+    }
+}
+
+pub enum OtherError<T> {
+    BB8Postgres(bb8::RunError<T>),
+    Unknown(T),
+}
+
+impl<T> Display for OtherError<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl<T> Debug for OtherError<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         todo!()
     }
 }
 
-impl<T> std::error::Error for DreamError<T>
+impl<T> std::error::Error for OtherError<T>
 where
     T: error::Error + 'static,
 {
@@ -114,7 +114,7 @@ where
     }
 }
 
-impl<T> From<T> for DreamError<T>
+impl<T> From<T> for OtherError<T>
 where
     T: error::Error,
 {

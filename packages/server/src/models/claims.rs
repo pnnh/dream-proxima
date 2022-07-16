@@ -10,7 +10,7 @@ use jsonwebtoken::{decode, DecodingKey, EncodingKey, Validation};
 use serde::{Deserialize, Serialize};
 
 use crate::handlers::State;
-use crate::models::error::{DreamError, ProximaError};
+use crate::models::error::{HttpError, OtherError};
 
 pub struct Keys {
     pub(crate) encoding: EncodingKey,
@@ -60,25 +60,25 @@ impl<B> FromRequest<B> for Claims
 where
     B: Send,
 {
-    type Rejection = ProximaError;
+    type Rejection = HttpError;
 
     async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
         // Extract the token from the authorization header
         let TypedHeader(Authorization(bearer)) =
             TypedHeader::<Authorization<Bearer>>::from_request(req)
                 .await
-                .map_err(|err| DreamError::Unknown(err))?;
+                .map_err(|err| OtherError::Unknown(err))?;
         // Decode the user data
         type Extractors = (Extension<Arc<State>>);
 
         let (Extension(state)) = Extractors::from_request(req)
             .await
-            .map_err(|err| DreamError::Unknown(err))?;
+            .map_err(|err| OtherError::Unknown(err))?;
 
         let jwt_keys = Keys::new(&state.config.jwt_secret.as_bytes());
         let token_data =
             decode::<Claims>(bearer.token(), &jwt_keys.decoding, &Validation::default())
-                .map_err(|err| DreamError::Unknown(err))?;
+                .map_err(|err| OtherError::Unknown(err))?;
 
         Ok(token_data.claims)
     }

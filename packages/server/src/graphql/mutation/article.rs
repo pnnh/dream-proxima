@@ -1,7 +1,7 @@
 use crate::graphql::types::Article;
 use crate::handlers::State;
 use crate::models::claims::Claims;
-use crate::models::error::{DreamError, ProximaError, SomeError};
+use crate::models::error::{AppError, HttpError, OtherError};
 use async_graphql::{Context, InputObject, Object, Result};
 use chrono::Utc;
 use nanoid::nanoid;
@@ -48,16 +48,16 @@ impl ArticleMutation {
         let state = ctx.data::<Arc<State>>().unwrap();
         let auth = ctx
             .data::<Option<Claims>>()
-            .map_err(|err| DreamError::Unknown(err))?;
+            .map_err(|err| OtherError::Unknown(err))?;
         if auth.is_none() {
-            return Err(async_graphql::Error::from(SomeError::InvalidToken));
+            return Err(async_graphql::Error::from(AppError::InvalidToken));
         }
 
         let conn = state
             .pool
             .get()
             .await
-            .map_err(|err| DreamError::Unknown(err))?;
+            .map_err(|err| OtherError::Unknown(err))?;
 
         let pk = nanoid!(12);
         let article_body = ArticleBody {
@@ -93,7 +93,7 @@ impl ArticleMutation {
             ],
         )
         .await
-        .map_err(|err| SomeError::Postgresql(err))?;
+        .map_err(|err| AppError::Postgresql(err))?;
 
         let result = CreateBody { pk: pk };
         Ok(result)

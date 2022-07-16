@@ -7,7 +7,7 @@ use axum::{extract::Extension, http::StatusCode};
 use serde_json::json;
 
 use crate::handlers::State;
-use crate::models::error::{DreamError, ProximaError, SomeError};
+use crate::models::error::{AppError, HttpError, OtherError};
 use crate::models::index::IndexModel;
 use crate::{helpers, layers};
 
@@ -21,18 +21,18 @@ pub struct IndexQuery {
 pub async fn index_handler<'a>(
     Query(args): Query<IndexQuery>,
     Extension(state): Extension<Arc<State>>,
-) -> Result<Html<String>, ProximaError> {
+) -> Result<Html<String>, HttpError> {
     let mut current_page = args.p.unwrap_or(1);
     tracing::debug!("current_page:{}", current_page,);
     if current_page < 1 {
-        return Err(ProximaError::from(SomeError::InvalidParameter));
+        return Err(HttpError::from(AppError::InvalidParameter));
     }
 
     let conn = state
         .pool
         .get()
         .await
-        .map_err(|err| DreamError::Unknown(err))?;
+        .map_err(|err| OtherError::Unknown(err))?;
 
     let row_count = 17;
     let mut max_page = row_count / INDEX_PAGE_SIZE;
@@ -59,7 +59,7 @@ order by update_time desc offset $1 limit $2;",
             &[&offset, &limit],
         )
         .await
-        .map_err(|err| DreamError::Unknown(err))?;
+        .map_err(|err| OtherError::Unknown(err))?;
 
     let mut models: Vec<IndexModel> = Vec::new();
 
@@ -95,7 +95,7 @@ order by update_time desc offset $1 limit $2;",
             "index",
             &json!({ "models": models, "pages_html": pages_html }),
         )
-        .map_err(|err| DreamError::Unknown(err))?;
+        .map_err(|err| OtherError::Unknown(err))?;
 
     Ok(Html(result))
 }

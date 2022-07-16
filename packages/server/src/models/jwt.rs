@@ -1,6 +1,6 @@
 use crate::handlers::State;
 use crate::models::claims::{Claims, Keys};
-use crate::models::error::{DreamError, ProximaError};
+use crate::models::error::{HttpError, OtherError};
 use async_trait::async_trait;
 use axum::extract::{FromRequest, RequestParts};
 use axum::headers::authorization::Bearer;
@@ -23,25 +23,25 @@ impl<B> FromRequest<B> for Protected
 where
     B: Send,
 {
-    type Rejection = ProximaError;
+    type Rejection = HttpError;
 
     async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
         // Extract the token from the authorization header
         let TypedHeader(Authorization(bearer)) =
             TypedHeader::<Authorization<Bearer>>::from_request(req)
                 .await
-                .map_err(|err| DreamError::Unknown(err))?;
+                .map_err(|err| OtherError::Unknown(err))?;
         // Decode the user data
         type Extractors = (Extension<Arc<State>>);
 
         let (Extension(state)) = Extractors::from_request(req)
             .await
-            .map_err(|err| DreamError::Unknown(err))?;
+            .map_err(|err| OtherError::Unknown(err))?;
 
         let jwt_keys = Keys::new(&state.config.jwt_secret.as_bytes());
         let token_data =
             decode::<Protected>(bearer.token(), &jwt_keys.decoding, &Validation::default())
-                .map_err(|err| DreamError::Unknown(err))?;
+                .map_err(|err| OtherError::Unknown(err))?;
 
         Ok(token_data.claims)
     }
