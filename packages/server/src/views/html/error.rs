@@ -35,7 +35,10 @@ impl Display for HttpHTMLError {
     }
 }
 
-impl<T> From<OtherError<T>> for HttpHTMLError {
+impl<T> From<OtherError<T>> for HttpHTMLError
+where
+    T: Debug,
+{
     fn from(error: OtherError<T>) -> Self {
         HttpHTMLError::new(error.to_string().as_str())
     }

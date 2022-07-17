@@ -20,7 +20,7 @@ pub enum AppError {
     Graphql(async_graphql::Error),
     Postgresql(tokio_postgres::Error),
     Handlebars(handlebars::RenderError),
-    Unknown,
+    Unknown(String),
 }
 
 impl Display for AppError {
@@ -37,26 +37,30 @@ impl Debug for AppError {
     }
 }
 
-impl<T> From<OtherError<T>> for AppError {
+impl<T> From<OtherError<T>> for AppError
+where
+    T: Debug,
+{
     fn from(error: OtherError<T>) -> Self {
-        AppError::Unknown
+        AppError::Unknown(error.to_string())
     }
 }
 
-pub enum OtherError<T> {
+#[derive(Debug)]
+pub enum OtherError<T>
+where
+    T: Debug,
+{
     BB8Postgres(bb8::RunError<T>),
     Unknown(T),
 }
 
-impl<T> Display for OtherError<T> {
+impl<T> Display for OtherError<T>
+where
+    T: Debug,
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self)
-    }
-}
-
-impl<T> Debug for OtherError<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        todo!()
     }
 }
 
