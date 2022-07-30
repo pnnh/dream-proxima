@@ -1,13 +1,13 @@
+
+#include <cstdlib>
 #include <iostream>
-#include <stdint.h>
+//#include <spdlog/spdlog.h>
 
 extern "C" {
 void foo_rs(uint32_t a, uint32_t b);
 }
 
-int main()
-{
-    std::cout << "Cpp Hello World" << std::endl;
-    foo_rs(5, 7);
-    return 0;
+int main(int argc, char *argv[]) {
+  // spdlog::info("i love c++");
+  std::cout << "Hello, World!" << std::endl;
 }
