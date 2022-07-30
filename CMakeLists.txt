@@ -8,17 +8,17 @@ cmake_minimum_required(VERSION 3.22)
 project(Proxima C CXX)
 
 
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_C_STANDARD 17)
+#set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 20)
+#set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 if (APPLE)
     # xcode自带的工具链缺少一些功能，这里使用命令行工具链
-    set(CMAKE_OSX_SYSROOT "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk")
+    #set(CMAKE_OSX_SYSROOT "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk")
     # mac m1 下通过homebrew安装的程序默认在/opt目录下，需要添加到引用路径里去
     if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "arm64")
         link_directories("/opt/homebrew/lib")
@@ -48,4 +48,4 @@ endif (folly_FOUND)
 
 add_executable(sfx-server packages/foo/main.cpp)
 
-#target_link_libraries(sfx-server PRIVATE spdlog)
+target_link_libraries(sfx-server PRIVATE spdlog)
