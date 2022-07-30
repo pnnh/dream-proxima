@@ -17,7 +17,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 if (APPLE)
-    # xcode自带的工具链缺少一些功能，这里使用命令行工具链
+    # xcode自带的clang工具链缺少一些功能，这里使用命令行工具链
     #set(CMAKE_OSX_SYSROOT "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk")
     # mac m1 下通过homebrew安装的程序默认在/opt目录下，需要添加到引用路径里去
     if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "arm64")
@@ -29,6 +29,7 @@ endif ()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 include(spdlog)
+include(multimarkdown)
 
 find_package(PkgConfig REQUIRED)
 
@@ -46,6 +47,14 @@ if (folly_FOUND)
     LINK_LIBRARIES(${FOLLY_LIBRARIES})
 endif (folly_FOUND)
 
-add_executable(sfx-server packages/foo/main.cpp)
+add_executable(server packages/foo/main.cpp)
 
-target_link_libraries(sfx-server PRIVATE spdlog)
+target_link_libraries(server PRIVATE spdlog)
+#target_link_libraries(server PRIVATE ${MultiMarkdown_LIB})
+#target_include_directories(server PRIVATE ${MultiMarkdown_INCLUDE_DIR})
+
+add_dependencies(server Rescan)
+if (${MultiMarkdown_FOUND})
+    message("Rescan3")
+    target_link_libraries(server ${Beaengine_LIBRARY})
+endif ()
