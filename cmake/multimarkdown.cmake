@@ -25,10 +25,16 @@ set(MultiMarkdown_INCLUDE_DIR ${MultiMarkdown_ROOT}/src/MultiMarkdown-build)
 
 message("Rescan0 ${MultiMarkdown_FOUND}")
 
-if (APPLE)
-    include_directories(${MultiMarkdown_LIB_DIR}/libMultiMarkdown.framework/Headers)
-    link_directories(${MultiMarkdown_LIB_DIR})
-endif ()
+#if (APPLE)
+#    include_directories(${MultiMarkdown_LIB_DIR}/libMultiMarkdown.framework/Headers)
+#    link_directories(${MultiMarkdown_LIB_DIR})
+#endif ()
+
+include_directories(${MultiMarkdown_ROOT}/src/MultiMarkdown-build/libMultiMarkdown.framework/Headers)
+add_library(Markdown STATIC IMPORTED)
+set_target_properties(Markdown PROPERTIES
+        FRAMEWORK TRUE
+        IMPORTED_LOCATION ${MultiMarkdown_ROOT}/src/MultiMarkdown-build/libMultiMarkdown.framework/libMultiMarkdown)
 
 
 #if (NOT ${MultiMarkdown_FOUND})

@@ -29,7 +29,7 @@ endif ()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 include(spdlog)
-include(multimarkdown)
+include(multimarkdown6)
 
 find_package(PkgConfig REQUIRED)
 
@@ -49,16 +49,10 @@ endif (folly_FOUND)
 
 add_executable(server packages/foo/main.cpp)
 
+#add_dependencies(server MultiMarkdown)
+
 target_link_libraries(server PRIVATE spdlog)
-#target_link_libraries(server PRIVATE MultiMarkdown)
+target_link_libraries(server PRIVATE MultiMarkdown)
 
-#add_custom_target(Rescan ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} DEPENDS MultiMarkdown)
-add_dependencies(server MultiMarkdown)
-
-message("xxxx ${MultiMarkdown_LIB_DIR}")
-#target_link_libraries(server PRIVATE MultiMarkdown)
-#target_include_directories(server PRIVATE ${MultiMarkdown_INCLUDE_DIR})
-#if (${MultiMarkdown_FOUND})
-#    message(" Rescan3 ")
-#    target_link_libraries(server ${Beaengine_LIBRARY})
-#endif ()
+#target_link_libraries(server PRIVATE /Users/Larry/Projects/github/dream-proxima/cmake-build-debug-gcc/thirdparty/MultiMarkdown/src/MultiMarkdown-build/libMultiMarkdown.framework)
+#target_include_directories(server PRIVATE ${Markdown2}/libMultiMarkdown)
