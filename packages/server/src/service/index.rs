@@ -65,4 +65,25 @@ order by update_time desc offset $1 limit $2;",
         }
         Ok(models)
     }
+
+    pub async fn query_count(&self) -> Result<i64, AppError> {
+        let conn = self
+            .state
+            .pool
+            .get()
+            .await
+            .expect("index articles获取pool出错");
+
+        let query_result = conn
+            .query("select count(*) from articles where status = 1;", &[])
+            .await
+            .expect("index count执行查询出错");
+
+        for row in query_result {
+            let count: i64 = row.get(0);
+            return Ok(count as i64);
+        }
+
+        Err(AppError::EmptyData)
+    }
 }

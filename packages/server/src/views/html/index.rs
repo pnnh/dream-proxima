@@ -31,7 +31,10 @@ pub async fn index_handler<'a>(
         return Err(HttpRESTError::from(AppError::InvalidParameter));
     }
 
-    let row_count = 17;
+    let index_service = IndexService::new(state.clone());
+    let count = index_service.query_count().await?;
+
+    let row_count = count as i32;
     let mut max_page = row_count / INDEX_PAGE_SIZE;
     if row_count % INDEX_PAGE_SIZE != 0 {
         max_page += 1;
@@ -42,8 +45,6 @@ pub async fn index_handler<'a>(
 
     let offset: i64 = ((current_page - 1) * INDEX_PAGE_SIZE) as i64;
     let limit: i64 = INDEX_PAGE_SIZE as i64;
-
-    let index_service = IndexService::new(state.clone());
 
     let models = index_service.query(offset, limit).await?;
 
