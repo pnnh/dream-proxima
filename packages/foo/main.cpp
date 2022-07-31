@@ -1,10 +1,10 @@
 
 #include <iostream>
 #include <spdlog/spdlog.h>
-#include <stdio.h>
 
 extern "C" {
 #include "libMultiMarkdown.h"
+#include <stdio.h>
 }
 //
 // extern char *mmd_string_convert(const char *source, unsigned long extensions,
